@@ -1,0 +1,19 @@
+{
+  "name": "cricket-career-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline-first cricket training and career planning tools.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "check": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  }
+}
