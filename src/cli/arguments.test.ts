@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   parseCliArguments,
   CliUsageError,
+  DEFAULT_JOURNAL_DIRECTORY,
   type CliCommand,
 } from "./arguments.js";
 
@@ -115,5 +116,121 @@ test("rejects incomplete show and unknown command forms", () => {
   assert.throws(
     () => parseCliArguments(["plan", "delete"]),
     /unknown plan command delete/,
+  );
+});
+
+test("parses journal completion with default and explicit storage", () => {
+  assert.deepEqual(
+    parseCliArguments([
+      "journal",
+      "complete",
+      "--plan",
+      "plan.json",
+      "--from",
+      "completion.json",
+    ]),
+    {
+      kind: "journal-complete",
+      plan: "plan.json",
+      from: "completion.json",
+      journal: DEFAULT_JOURNAL_DIRECTORY,
+    },
+  );
+
+  assert.deepEqual(
+    parseCliArguments([
+      "journal",
+      "complete",
+      "--from",
+      "completion.json",
+      "--journal",
+      "private/journal",
+      "--completed-at",
+      "2026-09-05T12:00:00.000Z",
+      "--plan",
+      "plan.json",
+    ]),
+    {
+      kind: "journal-complete",
+      plan: "plan.json",
+      from: "completion.json",
+      journal: "private/journal",
+      completedAt: "2026-09-05T12:00:00.000Z",
+    },
+  );
+});
+
+test("parses journal list, show, and delete commands", () => {
+  assert.deepEqual(parseCliArguments(["journal", "list"]), {
+    kind: "journal-list",
+    journal: DEFAULT_JOURNAL_DIRECTORY,
+    json: false,
+  });
+  assert.deepEqual(
+    parseCliArguments([
+      "journal",
+      "list",
+      "--json",
+      "--journal",
+      "private/journal",
+    ]),
+    {
+      kind: "journal-list",
+      journal: "private/journal",
+      json: true,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments([
+      "journal",
+      "show",
+      "entry-one",
+      "--json",
+      "--journal",
+      "private/journal",
+    ]),
+    {
+      kind: "journal-show",
+      entryId: "entry-one",
+      journal: "private/journal",
+      json: true,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments(["journal", "delete", "entry-one"]),
+    {
+      kind: "journal-delete",
+      entryId: "entry-one",
+      journal: DEFAULT_JOURNAL_DIRECTORY,
+    },
+  );
+});
+
+test("rejects incomplete and ambiguous journal commands", () => {
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "journal",
+        "complete",
+        "--from",
+        "completion.json",
+      ]),
+    /requires --plan/,
+  );
+  assert.throws(
+    () => parseCliArguments(["journal", "show", "--json"]),
+    /requires <entry-id>/,
+  );
+  assert.throws(
+    () => parseCliArguments(["journal", "delete", "entry", "--json"]),
+    /unknown journal delete option --json/,
+  );
+  assert.throws(
+    () => parseCliArguments(["journal", "list", "--journal", ""]),
+    /requires a value/,
+  );
+  assert.throws(
+    () => parseCliArguments(["journal", "export"]),
+    /unknown journal command export/,
   );
 });

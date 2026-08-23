@@ -32,3 +32,7 @@ reported with stable repository error codes so the user can repair the exact fil
 
 The repository remains entirely local. It does not publish, synchronize, index,
 or transmit journal content.
+
+The command-line interface consumes this repository for complete, list, show, and
+delete operations. Its default directory is `.career/journal`, which is excluded
+from Git by the repository ignore policy.

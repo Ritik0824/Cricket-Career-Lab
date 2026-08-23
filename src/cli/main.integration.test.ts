@@ -79,6 +79,51 @@ test("compiled executable creates and displays a private plan", async () => {
     assert.equal(show.stderr, "");
     assert.match(show.stdout, /Duration: 20 min/);
     assert.match(show.stdout, /Focus\n- Fitness: 20 min/);
+
+    const completionPath = join(directory, "completion.json");
+    const journalPath = join(directory, "journal");
+    await writeFile(
+      completionPath,
+      JSON.stringify({
+        entryId: "running-entry",
+        drills: [
+          {
+            drillId: "two-turns",
+            completedMinutes: 18,
+            perceivedEffort: 8,
+          },
+        ],
+        sessionNote: "Turning technique improved.",
+      }),
+      "utf8",
+    );
+
+    const complete = await runExecutable([
+      "journal",
+      "complete",
+      "--plan",
+      planPath,
+      "--from",
+      completionPath,
+      "--journal",
+      journalPath,
+      "--completed-at",
+      "2026-09-02T12:00:00.000Z",
+    ]);
+    assert.equal(complete.exitCode, 0);
+    assert.equal(complete.stderr, "");
+    assert.match(complete.stdout, /Recorded "Running between wickets"/);
+
+    const journal = await runExecutable([
+      "journal",
+      "show",
+      "running-entry",
+      "--journal",
+      journalPath,
+    ]);
+    assert.equal(journal.exitCode, 0);
+    assert.match(journal.stdout, /Status: Partial/);
+    assert.match(journal.stdout, /Turning technique improved/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

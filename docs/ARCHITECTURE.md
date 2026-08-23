@@ -54,3 +54,8 @@ adapters will consume this contract without recalculating its invariants.
 Journal persistence stores one versioned entry per private file. The repository
 uses the same atomic file primitive as plan storage, treats corrupt records as
 visible failures, and derives list order from canonical completion timestamps.
+
+The CLI completion boundary joins a validated saved plan with an untrusted
+completion draft, then persists the resulting domain entry. Journal list output
+keeps notes out of the default summary, while explicit show and JSON contracts
+make private detail available for local review and trusted tooling.

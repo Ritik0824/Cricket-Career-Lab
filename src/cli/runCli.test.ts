@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { loadSessionPlanFile } from "../storage/sessionPlanFileStore.js";
+import { TrainingJournalFileRepository } from "../storage/trainingJournalRepository.js";
 import { runCli, type CliEnvironment } from "./runCli.js";
 
 const FIXED_NOW = new Date("2026-08-23T16:30:00.000Z");
@@ -29,6 +30,26 @@ function draftJson(): string {
         intensity: "moderate",
       },
     ],
+  });
+}
+
+function completionJson(effort = 8): string {
+  return JSON.stringify({
+    entryId: "death-over-entry",
+    drills: [
+      {
+        drillId: "base-yorker",
+        completedMinutes: 22,
+        perceivedEffort: effort,
+        note: "Missed fewer yorkers after shortening the run-up.",
+      },
+      {
+        drillId: "slow-ball-release",
+        completedMinutes: 16,
+        perceivedEffort: 7,
+      },
+    ],
+    sessionNote: "Repeat the final six-ball set.",
   });
 }
 
@@ -174,4 +195,156 @@ test("prints help without reading or writing plan files", async () => {
   assert.match(capture.output.join(""), /Cricket Career Lab/);
   assert.match(capture.output.join(""), /plan create/);
   assert.deepEqual(capture.errors, []);
+});
+
+test("completes a plan and supports journal list, show, and delete", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const draftPath = join(directory, "plan-draft.json");
+    const planPath = join(directory, "plan.json");
+    const completionPath = join(directory, "completion.json");
+    const journalPath = join(directory, "journal");
+    await writeFile(draftPath, draftJson(), "utf8");
+    await writeFile(completionPath, completionJson(), "utf8");
+    await runCli(
+      ["plan", "create", "--from", draftPath, "--to", planPath],
+      captureEnvironment().environment,
+    );
+
+    const completeCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "complete",
+          "--plan",
+          planPath,
+          "--from",
+          completionPath,
+          "--journal",
+          journalPath,
+        ],
+        completeCapture.environment,
+      ),
+      0,
+    );
+    const repository = new TrainingJournalFileRepository(journalPath);
+    const saved = await repository.load("death-over-entry");
+    assert.equal(saved.completedAt, FIXED_NOW.toISOString());
+    assert.equal(saved.status, "partial");
+    assert.equal(saved.completedMinutes, 38);
+    assert.match(completeCapture.output.join(""), /Recorded "Death-over yorkers"/);
+
+    const listCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["journal", "list", "--journal", journalPath],
+        listCapture.environment,
+      ),
+      0,
+    );
+    assert.match(listCapture.output.join(""), /death-over-entry/);
+    assert.doesNotMatch(listCapture.output.join(""), /Repeat the final/);
+
+    const jsonListCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["journal", "list", "--journal", journalPath, "--json"],
+        jsonListCapture.environment,
+      ),
+      0,
+    );
+    const records = JSON.parse(jsonListCapture.output.join("")) as Array<
+      Record<string, unknown>
+    >;
+    assert.equal(records.length, 1);
+    assert.equal(records[0]?.entryId, "death-over-entry");
+
+    const showCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "show",
+          "death-over-entry",
+          "--journal",
+          journalPath,
+        ],
+        showCapture.environment,
+      ),
+      0,
+    );
+    assert.match(showCapture.output.join(""), /Average effort:/);
+    assert.match(showCapture.output.join(""), /Session note/);
+
+    const deleteCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "delete",
+          "death-over-entry",
+          "--journal",
+          journalPath,
+        ],
+        deleteCapture.environment,
+      ),
+      0,
+    );
+    assert.match(deleteCapture.output.join(""), /Deleted journal entry/);
+    assert.deepEqual(await repository.list(), []);
+
+    const missingDeleteCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "delete",
+          "death-over-entry",
+          "--journal",
+          journalPath,
+        ],
+        missingDeleteCapture.environment,
+      ),
+      0,
+    );
+    assert.match(missingDeleteCapture.output.join(""), /was found/);
+  });
+});
+
+test("reports completion-domain failures without creating a journal entry", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const draftPath = join(directory, "plan-draft.json");
+    const planPath = join(directory, "plan.json");
+    const completionPath = join(directory, "completion.json");
+    const journalPath = join(directory, "journal");
+    await writeFile(draftPath, draftJson(), "utf8");
+    await writeFile(completionPath, completionJson(11), "utf8");
+    await runCli(
+      ["plan", "create", "--from", draftPath, "--to", planPath],
+      captureEnvironment().environment,
+    );
+    const capture = captureEnvironment();
+
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "complete",
+          "--plan",
+          planPath,
+          "--from",
+          completionPath,
+          "--journal",
+          journalPath,
+        ],
+        capture.environment,
+      ),
+      1,
+    );
+    assert.match(capture.errors.join(""), /journal entry invalid/);
+    assert.deepEqual(
+      await new TrainingJournalFileRepository(journalPath).list(),
+      [],
+    );
+  });
 });

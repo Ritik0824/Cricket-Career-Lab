@@ -10,7 +10,32 @@ export type CliCommand =
       readonly kind: "plan-show";
       readonly filePath: string;
       readonly json: boolean;
+    }
+  | {
+      readonly kind: "journal-complete";
+      readonly plan: string;
+      readonly from: string;
+      readonly journal: string;
+      readonly completedAt?: string;
+    }
+  | {
+      readonly kind: "journal-list";
+      readonly journal: string;
+      readonly json: boolean;
+    }
+  | {
+      readonly kind: "journal-show";
+      readonly entryId: string;
+      readonly journal: string;
+      readonly json: boolean;
+    }
+  | {
+      readonly kind: "journal-delete";
+      readonly entryId: string;
+      readonly journal: string;
     };
+
+export const DEFAULT_JOURNAL_DIRECTORY = ".career/journal";
 
 export class CliUsageError extends Error {
   constructor(message: string) {
@@ -25,6 +50,13 @@ interface CreateOptions {
   savedAt?: string;
 }
 
+interface JournalCompleteOptions {
+  plan?: string;
+  from?: string;
+  journal?: string;
+  completedAt?: string;
+}
+
 function requireOptionValue(
   argumentsList: readonly string[],
   index: number,
@@ -32,7 +64,11 @@ function requireOptionValue(
 ): string {
   const value = argumentsList[index + 1];
 
-  if (value === undefined || value.startsWith("--")) {
+  if (
+    value === undefined ||
+    value.startsWith("--") ||
+    value.trim().length === 0
+  ) {
     throw new CliUsageError(`${option} requires a value`);
   }
 
@@ -119,11 +155,176 @@ function parseShow(argumentsList: readonly string[]): CliCommand {
     }
   }
 
-  if (filePath === undefined) {
+  if (filePath === undefined || filePath.trim().length === 0) {
     throw new CliUsageError("plan show requires <plan.json>");
   }
 
   return { kind: "plan-show", filePath, json };
+}
+
+function setJournalCompleteOption(
+  options: JournalCompleteOptions,
+  key: keyof JournalCompleteOptions,
+  value: string,
+  option: string,
+): void {
+  if (options[key] !== undefined) {
+    throw new CliUsageError(`${option} may only be provided once`);
+  }
+
+  options[key] = value;
+}
+
+function parseJournalComplete(argumentsList: readonly string[]): CliCommand {
+  const options: JournalCompleteOptions = {};
+
+  for (let index = 0; index < argumentsList.length; index += 2) {
+    const option = argumentsList[index];
+
+    if (option === undefined || !option.startsWith("--")) {
+      throw new CliUsageError(
+        `unexpected journal complete argument ${option ?? "<missing>"}`,
+      );
+    }
+
+    const value = requireOptionValue(argumentsList, index, option);
+
+    if (option === "--plan") {
+      setJournalCompleteOption(options, "plan", value, option);
+    } else if (option === "--from") {
+      setJournalCompleteOption(options, "from", value, option);
+    } else if (option === "--journal") {
+      setJournalCompleteOption(options, "journal", value, option);
+    } else if (option === "--completed-at") {
+      setJournalCompleteOption(options, "completedAt", value, option);
+    } else {
+      throw new CliUsageError(`unknown journal complete option ${option}`);
+    }
+  }
+
+  if (options.plan === undefined) {
+    throw new CliUsageError(
+      "journal complete requires --plan <plan.json>",
+    );
+  }
+
+  if (options.from === undefined) {
+    throw new CliUsageError(
+      "journal complete requires --from <completion.json>",
+    );
+  }
+
+  const base = {
+    kind: "journal-complete" as const,
+    plan: options.plan,
+    from: options.from,
+    journal: options.journal ?? DEFAULT_JOURNAL_DIRECTORY,
+  };
+
+  return options.completedAt === undefined
+    ? base
+    : { ...base, completedAt: options.completedAt };
+}
+
+function parseJournalList(argumentsList: readonly string[]): CliCommand {
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let journalProvided = false;
+  let json = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--json") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument === "--journal") {
+      if (journalProvided) {
+        throw new CliUsageError("--journal may only be provided once");
+      }
+
+      journal = requireOptionValue(argumentsList, index, argument);
+      journalProvided = true;
+      index += 1;
+    } else {
+      throw new CliUsageError(
+        `unknown journal list option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  return { kind: "journal-list", journal, json };
+}
+
+function parseJournalEntryCommand(
+  action: "show" | "delete",
+  argumentsList: readonly string[],
+): CliCommand {
+  let entryId: string | undefined;
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let journalProvided = false;
+  let json = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--journal") {
+      if (journalProvided) {
+        throw new CliUsageError("--journal may only be provided once");
+      }
+
+      journal = requireOptionValue(argumentsList, index, argument);
+      journalProvided = true;
+      index += 1;
+    } else if (argument === "--json" && action === "show") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument === undefined || argument.startsWith("--")) {
+      throw new CliUsageError(
+        `unknown journal ${action} option ${argument ?? "<missing>"}`,
+      );
+    } else if (entryId === undefined) {
+      entryId = argument;
+    } else {
+      throw new CliUsageError(
+        `unexpected journal ${action} argument ${argument}`,
+      );
+    }
+  }
+
+  if (entryId === undefined || entryId.trim().length === 0) {
+    throw new CliUsageError(`journal ${action} requires <entry-id>`);
+  }
+
+  return action === "show"
+    ? { kind: "journal-show", entryId, journal, json }
+    : { kind: "journal-delete", entryId, journal };
+}
+
+function parseJournalCommand(
+  action: string | undefined,
+  remaining: readonly string[],
+): CliCommand {
+  if (action === "complete") {
+    return parseJournalComplete(remaining);
+  }
+
+  if (action === "list") {
+    return parseJournalList(remaining);
+  }
+
+  if (action === "show" || action === "delete") {
+    return parseJournalEntryCommand(action, remaining);
+  }
+
+  throw new CliUsageError(
+    `unknown journal command ${action ?? "<missing>"}`,
+  );
 }
 
 export function parseCliArguments(argumentsList: readonly string[]): CliCommand {
@@ -137,19 +338,23 @@ export function parseCliArguments(argumentsList: readonly string[]): CliCommand 
 
   const [scope, action, ...remaining] = argumentsList;
 
-  if (scope !== "plan") {
-    throw new CliUsageError(`unknown command ${scope ?? "<missing>"}`);
+  if (scope === "plan") {
+    if (action === "create") {
+      return parseCreate(remaining);
+    }
+
+    if (action === "show") {
+      return parseShow(remaining);
+    }
+
+    throw new CliUsageError(
+      `unknown plan command ${action ?? "<missing>"}`,
+    );
   }
 
-  if (action === "create") {
-    return parseCreate(remaining);
+  if (scope === "journal") {
+    return parseJournalCommand(action, remaining);
   }
 
-  if (action === "show") {
-    return parseShow(remaining);
-  }
-
-  throw new CliUsageError(
-    `unknown plan command ${action ?? "<missing>"}`,
-  );
+  throw new CliUsageError(`unknown command ${scope ?? "<missing>"}`);
 }

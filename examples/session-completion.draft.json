@@ -1,0 +1,17 @@
+{
+  "entryId": "new-ball-accuracy-2026-09-05",
+  "drills": [
+    {
+      "drillId": "fourth-stump-channel",
+      "completedMinutes": 22,
+      "perceivedEffort": 8,
+      "note": "Release point stayed consistent through the final set."
+    },
+    {
+      "drillId": "follow-through-balance",
+      "completedMinutes": 12,
+      "perceivedEffort": 4
+    }
+  ],
+  "sessionNote": "Repeat from the opposite end next time."
+}

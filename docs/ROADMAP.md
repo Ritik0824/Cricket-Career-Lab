@@ -9,6 +9,7 @@ will be implemented and pushed in reviewable increments as development happens.
 - [x] Define stable, versioned records for private local storage.
 - [x] Save and restore a training plan through an atomic local-file adapter.
 - [x] Add a command-line workflow for creating and reviewing a planned session.
+- [x] Complete sessions and review the private journal through the CLI.
 
 ## Training journal
 

@@ -35,10 +35,14 @@ npm run cli -- plan create \
   --from examples/session-plan.draft.json \
   --to .career/plans/new-ball.json
 npm run cli -- plan show .career/plans/new-ball.json
+npm run cli -- journal complete \
+  --plan .career/plans/new-ball.json \
+  --from examples/session-completion.draft.json
+npm run cli -- journal list
 ```
 
-See [docs/CLI.md](docs/CLI.md) for JSON output, deterministic timestamps, exit
-statuses, and the complete draft workflow.
+See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
+JSON output, deterministic timestamps, and exit statuses.
 
 The training-journal domain can also turn a plan into an immutable completed,
 partial, or missed entry with drill-level effort, private notes, and
