@@ -86,9 +86,9 @@ in one owner-only file, with validation, privacy-safe inspection, explicit
 conflict policies, and rollback-aware restore. See
 [docs/PRIVATE_BACKUP.md](docs/PRIVATE_BACKUP.md).
 
-A dependency-free, read-only local API now exposes note-free journal summaries,
-live goal progress, and weekly or monthly review data to loopback clients. See
-[docs/LOCAL_API.md](docs/LOCAL_API.md).
+A dependency-free accessible dashboard and read-only API expose note-free journal
+summaries, live goal progress, and weekly or monthly review data on loopback only.
+See [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Local verification
 

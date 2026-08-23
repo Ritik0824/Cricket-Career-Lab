@@ -106,6 +106,30 @@ test("serves health metadata without touching repositories", async () => {
   });
 });
 
+test("serves the dependency-free dashboard with restrictive headers", async () => {
+  await withRouter(async (router) => {
+    const page = await router({ method: "GET", url: "/" });
+    assert.equal(page.status, 200);
+    assert.equal(page.headers["content-type"], "text/html; charset=utf-8");
+    assert.match(page.headers["content-security-policy"] ?? "", /script-src 'self'/);
+    assert.match(page.body, /Cricket Career Lab/);
+    assert.match(page.body, /\/assets\/app\.js/);
+
+    const css = await router({ method: "GET", url: "/assets/styles.css" });
+    assert.equal(css.status, 200);
+    assert.equal(css.headers["content-type"], "text/css; charset=utf-8");
+    assert.match(css.body, /focus-visible/);
+
+    const script = await router({ method: "GET", url: "/assets/app.js" });
+    assert.equal(script.status, 200);
+    assert.equal(
+      script.headers["content-type"],
+      "text/javascript; charset=utf-8",
+    );
+    assert.match(script.body, /loadDashboard/);
+  });
+});
+
 test("serves filtered journal summaries without private detail", async () => {
   await withRouter(async (router, directories) => {
     await seedPrivateReviewData(directories);

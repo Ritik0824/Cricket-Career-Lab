@@ -101,3 +101,9 @@ query, status, and privacy-safe projection contracts; the Node HTTP adapter owns
 socket lifecycle and response transport. It reuses repositories and deterministic
 review domains, rejects remote bindings, and converts storage failures to generic
 responses rather than leaking paths or private record details.
+
+The dashboard is served as same-origin HTML, CSS, and JavaScript with no external
+runtime dependencies. Its client uses text-only DOM construction for repository
+values rather than HTML injection. Semantic structure, focus treatment, responsive
+layouts, user color and motion preferences, and live loading feedback form the
+initial accessibility contract.

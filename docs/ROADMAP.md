@@ -34,7 +34,7 @@ will be implemented and pushed in reviewable increments as development happens.
 ## Local interface
 
 - [x] Expose privacy-safe review data through a loopback-only local API.
-- Add an accessible dependency-free browser dashboard.
+- [x] Add an accessible dependency-free browser dashboard.
 
 Features will be revised when real use reveals better priorities. Empty modules,
 placeholder features, and generated line-count padding are explicitly out of

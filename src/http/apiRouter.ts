@@ -21,6 +21,11 @@ import {
   toDevelopmentGoalApiView,
   toJournalEntryApiView,
 } from "./apiProjection.js";
+import {
+  DASHBOARD_CSS,
+  DASHBOARD_HTML,
+  DASHBOARD_JAVASCRIPT,
+} from "./dashboardAssets.js";
 
 export interface LocalApiRequest {
   readonly method: string;
@@ -53,13 +58,38 @@ class ApiQueryError extends Error {
   }
 }
 
-const JSON_HEADERS = Object.freeze({
-  "content-type": "application/json; charset=utf-8",
+const COMMON_HEADERS = Object.freeze({
   "cache-control": "no-store",
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
   "x-frame-options": "DENY",
+  "cross-origin-resource-policy": "same-origin",
+  "cross-origin-opener-policy": "same-origin",
+});
+
+const JSON_HEADERS = Object.freeze({
+  ...COMMON_HEADERS,
+  "content-type": "application/json; charset=utf-8",
   "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+});
+
+const HTML_HEADERS = Object.freeze({
+  ...COMMON_HEADERS,
+  "content-type": "text/html; charset=utf-8",
+  "content-security-policy":
+    "default-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+});
+
+const CSS_HEADERS = Object.freeze({
+  ...COMMON_HEADERS,
+  "content-type": "text/css; charset=utf-8",
+  "content-security-policy": "default-src 'none'",
+});
+
+const JAVASCRIPT_HEADERS = Object.freeze({
+  ...COMMON_HEADERS,
+  "content-type": "text/javascript; charset=utf-8",
+  "content-security-policy": "default-src 'none'",
 });
 
 function jsonResponse(status: number, value: unknown): LocalApiResponse {
@@ -68,6 +98,13 @@ function jsonResponse(status: number, value: unknown): LocalApiResponse {
     headers: JSON_HEADERS,
     body: JSON.stringify(value, null, 2),
   });
+}
+
+function assetResponse(
+  body: string,
+  headers: Readonly<Record<string, string>>,
+): LocalApiResponse {
+  return Object.freeze({ status: 200, headers, body });
 }
 
 function errorResponse(
@@ -196,6 +233,21 @@ export function createLocalApiRouter(
     }
 
     try {
+      if (url.pathname === "/") {
+        validateParameters(url.searchParams, []);
+        return assetResponse(DASHBOARD_HTML, HTML_HEADERS);
+      }
+
+      if (url.pathname === "/assets/styles.css") {
+        validateParameters(url.searchParams, []);
+        return assetResponse(DASHBOARD_CSS, CSS_HEADERS);
+      }
+
+      if (url.pathname === "/assets/app.js") {
+        validateParameters(url.searchParams, []);
+        return assetResponse(DASHBOARD_JAVASCRIPT, JAVASCRIPT_HEADERS);
+      }
+
       if (url.pathname === "/api/health") {
         validateParameters(url.searchParams, []);
         return jsonResponse(200, {

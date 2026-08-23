@@ -115,6 +115,15 @@ test("compiled local server accepts HTTP and shuts down on SIGTERM", async () =>
   ]);
 
   try {
+    const page = await fetch(started.origin);
+    assert.equal(page.status, 200);
+    assert.match(page.headers.get("content-type") ?? "", /text\/html/);
+    assert.match(await page.text(), /Current training picture/);
+
+    const script = await fetch(`${started.origin}/assets/app.js`);
+    assert.equal(script.status, 200);
+    assert.match(await script.text(), /loadDashboard/);
+
     const response = await fetch(`${started.origin}/api/health`);
     assert.equal(response.status, 200);
     assert.match(await response.text(), /local-read-only/);

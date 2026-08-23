@@ -1,4 +1,4 @@
-# Loopback Local API
+# Loopback Local Interface
 
 The local API exposes privacy-safe review projections to a browser or another
 trusted process on the same computer. It is read-only, requires no database or
@@ -25,9 +25,16 @@ npm run serve -- \
 Port `0` asks the operating system to select an ephemeral port, which is useful
 for isolated automation. `SIGINT` and `SIGTERM` close the listener cleanly.
 
+Open the printed origin in a browser to use the dependency-free dashboard. It
+provides keyboard-accessible date controls, evidence-backed goal progress,
+weekly and monthly workload patterns, and a responsive journal table. The page
+uses semantic headings, a skip link, labelled form controls, an announced loading
+status, visible keyboard focus, reduced-motion support, and light or dark color
+preferences. It contains no remote fonts, scripts, styles, images, or analytics.
+
 ## Routes
 
-All routes accept `GET` only and return JSON:
+All API routes accept `GET` only and return JSON:
 
 - `/api/health` returns API version and local-read-only status;
 - `/api/journal` returns note-free journal summaries and accepts the same `from`,
