@@ -40,9 +40,35 @@ export type CliCommand =
       readonly kind: "journal-delete";
       readonly entryId: string;
       readonly journal: string;
+    }
+  | {
+      readonly kind: "goal-create";
+      readonly from: string;
+      readonly goals: string;
+    }
+  | {
+      readonly kind: "goal-list";
+      readonly goals: string;
+      readonly journal: string;
+      readonly asOf?: string;
+      readonly json: boolean;
+    }
+  | {
+      readonly kind: "goal-show";
+      readonly goalId: string;
+      readonly goals: string;
+      readonly journal: string;
+      readonly asOf?: string;
+      readonly json: boolean;
+    }
+  | {
+      readonly kind: "goal-delete";
+      readonly goalId: string;
+      readonly goals: string;
     };
 
 export const DEFAULT_JOURNAL_DIRECTORY = ".career/journal";
+export const DEFAULT_GOAL_DIRECTORY = ".career/goals";
 
 export class CliUsageError extends Error {
   constructor(message: string) {
@@ -375,6 +401,189 @@ function parseJournalCommand(
   );
 }
 
+function parseGoalCreate(argumentsList: readonly string[]): CliCommand {
+  let from: string | undefined;
+  let goals = DEFAULT_GOAL_DIRECTORY;
+  let goalsProvided = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--from") {
+      if (from !== undefined) {
+        throw new CliUsageError("--from may only be provided once");
+      }
+
+      from = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+    } else if (argument === "--goals") {
+      if (goalsProvided) {
+        throw new CliUsageError("--goals may only be provided once");
+      }
+
+      goals = requireOptionValue(argumentsList, index, argument);
+      goalsProvided = true;
+      index += 1;
+    } else {
+      throw new CliUsageError(
+        `unknown goal create option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  if (from === undefined) {
+    throw new CliUsageError("goal create requires --from <goal.json>");
+  }
+
+  return { kind: "goal-create", from, goals };
+}
+
+interface GoalEvaluationOptions {
+  goals: string;
+  journal: string;
+  asOf?: string;
+  json: boolean;
+}
+
+function parseGoalEvaluationOptions(
+  action: "list" | "show",
+  argumentsList: readonly string[],
+): GoalEvaluationOptions & { readonly goalId?: string } {
+  let goalId: string | undefined;
+  let goals = DEFAULT_GOAL_DIRECTORY;
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let asOf: string | undefined;
+  let goalsProvided = false;
+  let journalProvided = false;
+  let json = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--json") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument === "--goals") {
+      if (goalsProvided) {
+        throw new CliUsageError("--goals may only be provided once");
+      }
+
+      goals = requireOptionValue(argumentsList, index, argument);
+      goalsProvided = true;
+      index += 1;
+    } else if (argument === "--journal") {
+      if (journalProvided) {
+        throw new CliUsageError("--journal may only be provided once");
+      }
+
+      journal = requireOptionValue(argumentsList, index, argument);
+      journalProvided = true;
+      index += 1;
+    } else if (argument === "--as-of") {
+      if (asOf !== undefined) {
+        throw new CliUsageError("--as-of may only be provided once");
+      }
+
+      asOf = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+    } else if (
+      action === "show" &&
+      argument !== undefined &&
+      !argument.startsWith("--") &&
+      goalId === undefined
+    ) {
+      goalId = argument;
+    } else {
+      throw new CliUsageError(
+        `unknown goal ${action} option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  if (action === "show" && goalId === undefined) {
+    throw new CliUsageError("goal show requires <goal-id>");
+  }
+
+  return {
+    goals,
+    journal,
+    ...(asOf === undefined ? {} : { asOf }),
+    json,
+    ...(goalId === undefined ? {} : { goalId }),
+  };
+}
+
+function parseGoalDelete(argumentsList: readonly string[]): CliCommand {
+  let goalId: string | undefined;
+  let goals = DEFAULT_GOAL_DIRECTORY;
+  let goalsProvided = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--goals") {
+      if (goalsProvided) {
+        throw new CliUsageError("--goals may only be provided once");
+      }
+
+      goals = requireOptionValue(argumentsList, index, argument);
+      goalsProvided = true;
+      index += 1;
+    } else if (
+      argument !== undefined &&
+      !argument.startsWith("--") &&
+      goalId === undefined
+    ) {
+      goalId = argument;
+    } else {
+      throw new CliUsageError(
+        `unknown goal delete option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  if (goalId === undefined) {
+    throw new CliUsageError("goal delete requires <goal-id>");
+  }
+
+  return { kind: "goal-delete", goalId, goals };
+}
+
+function parseGoalCommand(
+  action: string | undefined,
+  remaining: readonly string[],
+): CliCommand {
+  if (action === "create") {
+    return parseGoalCreate(remaining);
+  }
+
+  if (action === "list") {
+    return { kind: "goal-list", ...parseGoalEvaluationOptions(action, remaining) };
+  }
+
+  if (action === "show") {
+    const options = parseGoalEvaluationOptions(action, remaining);
+
+    return {
+      kind: "goal-show",
+      goalId: options.goalId as string,
+      goals: options.goals,
+      journal: options.journal,
+      ...(options.asOf === undefined ? {} : { asOf: options.asOf }),
+      json: options.json,
+    };
+  }
+
+  if (action === "delete") {
+    return parseGoalDelete(remaining);
+  }
+
+  throw new CliUsageError(`unknown goal command ${action ?? "<missing>"}`);
+}
+
 export function parseCliArguments(argumentsList: readonly string[]): CliCommand {
   if (
     argumentsList.length === 0 ||
@@ -402,6 +611,10 @@ export function parseCliArguments(argumentsList: readonly string[]): CliCommand 
 
   if (scope === "journal") {
     return parseJournalCommand(action, remaining);
+  }
+
+  if (scope === "goal") {
+    return parseGoalCommand(action, remaining);
   }
 
   throw new CliUsageError(`unknown command ${scope ?? "<missing>"}`);

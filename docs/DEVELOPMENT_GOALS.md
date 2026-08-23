@@ -39,5 +39,7 @@ Days remaining are never negative. Evaluating several goals orders them by due
 date and identifier for deterministic review.
 
 The versioned private goal repository now stores definitions without progress.
-CLI management remains a separate boundary that will join goals to live journal
-evidence through this domain contract.
+The CLI creates and deletes those definitions, and joins list or detail views to
+live journal evidence through this domain contract. Its JSON progress view keeps
+the versioned definition separate from derived status and evidence, and never
+copies journal notes.

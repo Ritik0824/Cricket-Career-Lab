@@ -1,8 +1,8 @@
 # Goal Storage
 
 Private goal definitions use one versioned JSON file per normalized goal
-identifier. The default future CLI location is `.career/goals`, already protected
-by the repository ignore policy.
+identifier. The default CLI location is `.career/goals`, already protected by the
+repository ignore policy.
 
 ## Record contract
 
@@ -28,3 +28,8 @@ than silently disappearing from a progress review. Non-JSON files, temporary
 files, and nested directories are ignored.
 
 No goal definition or derived progress leaves the local filesystem.
+
+The CLI supports create, list, show, and idempotent delete operations. List and
+show read definitions and journal entries independently, then derive progress for
+an explicit or current UTC date. Goal JSON output contains evidence references,
+but it does not embed journal notes or persist derived counters.

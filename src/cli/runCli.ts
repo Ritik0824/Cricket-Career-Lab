@@ -2,6 +2,10 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import {
+  parseDevelopmentGoalDraft,
+  DevelopmentGoalDraftError,
+} from "../application/developmentGoalDraft.js";
+import {
   parseSessionPlanDraft,
   SessionPlanDraftError,
 } from "../application/sessionPlanDraft.js";
@@ -10,6 +14,11 @@ import {
   TrainingCompletionDraftError,
 } from "../application/trainingCompletionDraft.js";
 import {
+  evaluateDevelopmentGoal,
+  evaluateDevelopmentGoals,
+  DevelopmentGoalValidationError,
+} from "../domain/developmentGoal.js";
+import {
   completeTrainingSession,
   TrainingJournalValidationError,
 } from "../domain/trainingJournal.js";
@@ -17,6 +26,13 @@ import {
   filterTrainingJournal,
   TrainingJournalQueryError,
 } from "../domain/trainingJournalQuery.js";
+import {
+  DevelopmentGoalFileRepository,
+  DevelopmentGoalRepositoryError,
+} from "../storage/developmentGoalRepository.js";
+import {
+  DevelopmentGoalRecordError,
+} from "../storage/developmentGoalRecord.js";
 import {
   loadSessionPlanFile,
   saveSessionPlanFile,
@@ -35,6 +51,11 @@ import {
   TrainingJournalRecordError,
 } from "../storage/trainingJournalRecord.js";
 import { parseCliArguments, CliUsageError } from "./arguments.js";
+import {
+  formatGoalProgress,
+  formatGoalProgressList,
+  toGoalProgressView,
+} from "./formatGoal.js";
 import { formatJournalEntry, formatJournalList } from "./formatJournal.js";
 import { formatSessionPlan } from "./formatPlan.js";
 import { CLI_HELP } from "./help.js";
@@ -66,6 +87,10 @@ async function readDraft(filePath: string, label: string): Promise<string> {
 }
 
 function describeError(error: unknown): string {
+  if (error instanceof DevelopmentGoalDraftError) {
+    return `goal draft ${error.code.toLowerCase()} at ${error.path}: ${error.message}`;
+  }
+
   if (error instanceof SessionPlanDraftError) {
     return `draft ${error.code.toLowerCase()} at ${error.path}: ${error.message}`;
   }
@@ -80,6 +105,18 @@ function describeError(error: unknown): string {
 
   if (error instanceof TrainingJournalQueryError) {
     return `journal query invalid at ${error.field}: ${error.message}`;
+  }
+
+  if (error instanceof DevelopmentGoalValidationError) {
+    return `goal invalid at ${error.field}: ${error.message}`;
+  }
+
+  if (error instanceof DevelopmentGoalRepositoryError) {
+    return `goal ${error.code.toLowerCase()}: ${error.message}`;
+  }
+
+  if (error instanceof DevelopmentGoalRecordError) {
+    return `goal record ${error.code.toLowerCase()} at ${error.path}: ${error.message}`;
   }
 
   if (error instanceof TrainingJournalRepositoryError) {
@@ -181,6 +218,74 @@ export async function runCli(
           `Time: ${saved.completedMinutes}/${saved.plannedMinutes} min`,
           `Journal: ${repository.directoryPath}`,
         ].join("\n") + "\n",
+      );
+      return 0;
+    }
+
+    if (command.kind === "goal-create") {
+      const source = await readDraft(command.from, "development goal draft");
+      const goal = parseDevelopmentGoalDraft(source);
+      const repository = new DevelopmentGoalFileRepository(command.goals);
+      const saved = await repository.save(goal);
+
+      environment.writeOutput(
+        [
+          `Saved goal "${saved.title}" as ${saved.goalId}`,
+          `Metric: ${saved.metric}`,
+          `Target: ${saved.target}`,
+          `Window: ${saved.startDate} to ${saved.dueDate}`,
+          `Goals: ${repository.directoryPath}`,
+        ].join("\n") + "\n",
+      );
+      return 0;
+    }
+
+    if (command.kind === "goal-list") {
+      const goalRepository = new DevelopmentGoalFileRepository(command.goals);
+      const journalRepository = new TrainingJournalFileRepository(
+        command.journal,
+      );
+      const [goals, entries] = await Promise.all([
+        goalRepository.list(),
+        journalRepository.list(),
+      ]);
+      const asOf = command.asOf ?? environment.now().toISOString().slice(0, 10);
+      const progress = evaluateDevelopmentGoals(goals, entries, asOf);
+      const output = command.json
+        ? JSON.stringify(progress.map(toGoalProgressView), null, 2)
+        : formatGoalProgressList(progress);
+
+      environment.writeOutput(`${output}\n`);
+      return 0;
+    }
+
+    if (command.kind === "goal-show") {
+      const goalRepository = new DevelopmentGoalFileRepository(command.goals);
+      const journalRepository = new TrainingJournalFileRepository(
+        command.journal,
+      );
+      const [goal, entries] = await Promise.all([
+        goalRepository.load(command.goalId),
+        journalRepository.list(),
+      ]);
+      const asOf = command.asOf ?? environment.now().toISOString().slice(0, 10);
+      const progress = evaluateDevelopmentGoal(goal, entries, asOf);
+      const output = command.json
+        ? JSON.stringify(toGoalProgressView(progress), null, 2)
+        : formatGoalProgress(progress);
+
+      environment.writeOutput(`${output}\n`);
+      return 0;
+    }
+
+    if (command.kind === "goal-delete") {
+      const repository = new DevelopmentGoalFileRepository(command.goals);
+      const deleted = await repository.delete(command.goalId);
+
+      environment.writeOutput(
+        deleted
+          ? `Deleted development goal ${command.goalId}.\n`
+          : `No development goal ${command.goalId} was found.\n`,
       );
       return 0;
     }

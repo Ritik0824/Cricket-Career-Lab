@@ -392,6 +392,7 @@ export function evaluateDevelopmentGoals(
   entries: readonly TrainingJournalEntry[],
   evaluatedOn: string,
 ): readonly DevelopmentGoalProgress[] {
+  const normalizedDate = normalizeEvaluationDate(evaluatedOn);
   const seenIds = new Set<string>();
 
   goals.forEach((goal, index) => {
@@ -407,7 +408,7 @@ export function evaluateDevelopmentGoals(
 
   return Object.freeze(
     goals
-      .map((goal) => evaluateDevelopmentGoal(goal, entries, evaluatedOn))
+      .map((goal) => evaluateDevelopmentGoal(goal, entries, normalizedDate))
       .sort(
         (left, right) =>
           left.goal.dueDate.localeCompare(right.goal.dueDate) ||

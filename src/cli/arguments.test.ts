@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   parseCliArguments,
   CliUsageError,
+  DEFAULT_GOAL_DIRECTORY,
   DEFAULT_JOURNAL_DIRECTORY,
   type CliCommand,
 } from "./arguments.js";
@@ -286,5 +287,91 @@ test("rejects malformed and duplicate list filter options", () => {
         "missed",
       ]),
     /only be provided once/,
+  );
+});
+
+test("parses goal creation and live evaluation commands", () => {
+  assert.deepEqual(
+    parseCliArguments(["goal", "create", "--from", "goal.json"]),
+    {
+      kind: "goal-create",
+      from: "goal.json",
+      goals: DEFAULT_GOAL_DIRECTORY,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments([
+      "goal",
+      "list",
+      "--goals",
+      "private/goals",
+      "--journal",
+      "private/journal",
+      "--as-of",
+      "2026-09-15",
+      "--json",
+    ]),
+    {
+      kind: "goal-list",
+      goals: "private/goals",
+      journal: "private/journal",
+      asOf: "2026-09-15",
+      json: true,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments(["goal", "show", "bowling-volume"]),
+    {
+      kind: "goal-show",
+      goalId: "bowling-volume",
+      goals: DEFAULT_GOAL_DIRECTORY,
+      journal: DEFAULT_JOURNAL_DIRECTORY,
+      json: false,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments([
+      "goal",
+      "delete",
+      "bowling-volume",
+      "--goals",
+      "private/goals",
+    ]),
+    {
+      kind: "goal-delete",
+      goalId: "bowling-volume",
+      goals: "private/goals",
+    },
+  );
+});
+
+test("rejects incomplete and ambiguous goal commands", () => {
+  assert.throws(
+    () => parseCliArguments(["goal", "create"]),
+    /requires --from/,
+  );
+  assert.throws(
+    () => parseCliArguments(["goal", "show", "--json"]),
+    /requires <goal-id>/,
+  );
+  assert.throws(
+    () => parseCliArguments(["goal", "delete", "one", "--json"]),
+    /unknown goal delete option --json/,
+  );
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "goal",
+        "list",
+        "--as-of",
+        "2026-09-01",
+        "--as-of",
+        "2026-09-02",
+      ]),
+    /only be provided once/,
+  );
+  assert.throws(
+    () => parseCliArguments(["goal", "archive", "one"]),
+    /unknown goal command archive/,
   );
 });

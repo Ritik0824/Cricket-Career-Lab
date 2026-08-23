@@ -372,3 +372,12 @@ test("validates evaluation dates and returns immutable sorted goal progress", ()
     /listed more than once/,
   );
 });
+
+test("validates the evaluation date even when no goals exist", () => {
+  assert.throws(
+    () => evaluateDevelopmentGoals([], [], "2026-02-30"),
+    (error: unknown) =>
+      error instanceof DevelopmentGoalValidationError &&
+      error.field === "evaluatedOn",
+  );
+});

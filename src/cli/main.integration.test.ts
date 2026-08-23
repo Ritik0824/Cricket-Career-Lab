@@ -124,6 +124,50 @@ test("compiled executable creates and displays a private plan", async () => {
     assert.equal(journal.exitCode, 0);
     assert.match(journal.stdout, /Status: Partial/);
     assert.match(journal.stdout, /Turning technique improved/);
+
+    const goalDraftPath = join(directory, "goal.json");
+    const goalsPath = join(directory, "goals");
+    await writeFile(
+      goalDraftPath,
+      JSON.stringify({
+        goalId: "running-volume",
+        title: "Build running volume",
+        metric: "training-minutes",
+        target: 20,
+        startDate: "2026-09-01",
+        dueDate: "2026-09-30",
+      }),
+      "utf8",
+    );
+
+    const createGoal = await runExecutable([
+      "goal",
+      "create",
+      "--from",
+      goalDraftPath,
+      "--goals",
+      goalsPath,
+    ]);
+    assert.equal(createGoal.exitCode, 0);
+    assert.equal(createGoal.stderr, "");
+    assert.match(createGoal.stdout, /Saved goal.*running-volume/);
+
+    const showGoal = await runExecutable([
+      "goal",
+      "show",
+      "running-volume",
+      "--goals",
+      goalsPath,
+      "--journal",
+      journalPath,
+      "--as-of",
+      "2026-09-30",
+    ]);
+    assert.equal(showGoal.exitCode, 0);
+    assert.equal(showGoal.stderr, "");
+    assert.match(showGoal.stdout, /Status: In-progress/);
+    assert.match(showGoal.stdout, /Progress: 18\/20 min \(90%\)/);
+    assert.match(showGoal.stdout, /running-entry \| \+18/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

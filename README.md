@@ -39,6 +39,9 @@ npm run cli -- journal complete \
   --plan .career/plans/new-ball.json \
   --from examples/session-completion.draft.json
 npm run cli -- journal list
+npm run cli -- goal create \
+  --from examples/development-goal.draft.json
+npm run cli -- goal list --as-of 2026-09-30
 ```
 
 See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
@@ -62,7 +65,9 @@ consistency progress from exact journal evidence inside an inclusive target
 window. See [docs/DEVELOPMENT_GOALS.md](docs/DEVELOPMENT_GOALS.md).
 
 Goal definitions persist separately from progress in an owner-only versioned
-repository. See [docs/GOAL_STORAGE.md](docs/GOAL_STORAGE.md).
+repository. The CLI creates definitions and joins them with current journal
+evidence for list and detail views. See
+[docs/GOAL_STORAGE.md](docs/GOAL_STORAGE.md).
 
 ## Local verification
 

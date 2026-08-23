@@ -109,6 +109,40 @@ npm run cli -- journal delete new-ball-accuracy-2026-09-05
 Deleting a missing identifier is an idempotent success and reports that no entry
 was found.
 
+## Manage development goals
+
+Create a goal definition from the included draft shape:
+
+```bash
+npm run cli -- goal create \
+  --from examples/development-goal.draft.json
+```
+
+Definitions default to `.career/goals`. Use `--goals <directory>` to select a
+different private repository. The command validates metric, target, focus, and
+date-window rules before it creates or replaces the definition.
+
+Review every goal using live journal evidence:
+
+```bash
+npm run cli -- goal list --as-of 2026-09-30
+npm run cli -- goal show new-ball-bowling-volume --as-of 2026-09-30
+```
+
+Both review commands accept `--goals`, `--journal`, and `--json`. Without
+`--as-of`, they evaluate on the current UTC calendar date. Text and JSON views
+include only entry identifiers, timestamps, and numeric contributions as
+evidence; journal notes are not copied into goal output.
+
+Delete a definition without changing any journal entries:
+
+```bash
+npm run cli -- goal delete new-ball-bowling-volume
+```
+
+Deleting a missing goal is also an idempotent success. Derived progress is never
+stored, so every later review reflects corrected or removed journal entries.
+
 Usage mistakes exit with status `2`. Draft, record, and filesystem failures exit
 with status `1`; successful commands and help exit with status `0`. Error details
 are written to standard error so JSON output remains safe to pipe.

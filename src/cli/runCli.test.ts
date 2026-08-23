@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { loadSessionPlanFile } from "../storage/sessionPlanFileStore.js";
+import { DevelopmentGoalFileRepository } from "../storage/developmentGoalRepository.js";
 import { TrainingJournalFileRepository } from "../storage/trainingJournalRepository.js";
 import { createSessionPlan } from "../domain/sessionPlan.js";
 import { completeTrainingSession } from "../domain/trainingJournal.js";
@@ -443,5 +444,209 @@ test("filters journal lists through the public command", async () => {
       1,
     );
     assert.match(invalidCapture.errors.join(""), /journal query invalid at focus/);
+  });
+});
+
+test("creates, evaluates, shows, and deletes live development goals", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const goalsPath = join(directory, "goals");
+    const journalPath = join(directory, "journal");
+    const goalDraftPath = join(directory, "goal.json");
+    await writeFile(
+      goalDraftPath,
+      JSON.stringify({
+        goalId: "seam-volume",
+        title: "Build seam bowling volume",
+        metric: "focus-minutes",
+        target: 60,
+        startDate: "2026-09-01",
+        dueDate: "2026-09-30",
+        focus: "bowling",
+      }),
+      "utf8",
+    );
+
+    const plan = createSessionPlan({
+      title: "Seam movement",
+      scheduledFor: "2026-09-10",
+      drills: [
+        {
+          id: "wobble-seam",
+          name: "Wobble seam release",
+          focus: "bowling",
+          minutes: 30,
+          intensity: "moderate",
+        },
+      ],
+    });
+    await new TrainingJournalFileRepository(journalPath).save(
+      completeTrainingSession({
+        entryId: "wobble-seam-entry",
+        plan,
+        completedAt: "2026-09-10T07:30:00.000Z",
+        drills: [
+          {
+            drillId: "wobble-seam",
+            completedMinutes: 24,
+            perceivedEffort: 7,
+            note: "Private wrist cue.",
+          },
+        ],
+        sessionNote: "Private follow-up note.",
+      }),
+    );
+
+    const createCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "goal",
+          "create",
+          "--from",
+          goalDraftPath,
+          "--goals",
+          goalsPath,
+        ],
+        createCapture.environment,
+      ),
+      0,
+    );
+    assert.match(createCapture.output.join(""), /Saved goal.*seam-volume/);
+    assert.equal(
+      (await new DevelopmentGoalFileRepository(goalsPath).load("seam-volume"))
+        .target,
+      60,
+    );
+
+    const listCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "goal",
+          "list",
+          "--goals",
+          goalsPath,
+          "--journal",
+          journalPath,
+          "--as-of",
+          "2026-09-10",
+        ],
+        listCapture.environment,
+      ),
+      0,
+    );
+    assert.match(listCapture.output.join(""), /seam-volume/);
+    assert.match(listCapture.output.join(""), /24\/60 min \(40%\)/);
+    assert.doesNotMatch(listCapture.output.join(""), /Private/);
+
+    const showCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "goal",
+          "show",
+          "seam-volume",
+          "--goals",
+          goalsPath,
+          "--journal",
+          journalPath,
+          "--as-of",
+          "2026-09-10",
+          "--json",
+        ],
+        showCapture.environment,
+      ),
+      0,
+    );
+    const view = JSON.parse(showCapture.output.join("")) as {
+      goal: Record<string, unknown>;
+      progress: {
+        currentValue: number;
+        evidence: Array<Record<string, unknown>>;
+      };
+    };
+    assert.equal(view.goal.version, 1);
+    assert.equal(view.progress.currentValue, 24);
+    assert.equal(view.progress.evidence[0]?.entryId, "wobble-seam-entry");
+    assert.doesNotMatch(showCapture.output.join(""), /Private/);
+
+    const deleteCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["goal", "delete", "seam-volume", "--goals", goalsPath],
+        deleteCapture.environment,
+      ),
+      0,
+    );
+    assert.match(deleteCapture.output.join(""), /Deleted development goal/);
+
+    const missingDeleteCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["goal", "delete", "seam-volume", "--goals", goalsPath],
+        missingDeleteCapture.environment,
+      ),
+      0,
+    );
+    assert.match(missingDeleteCapture.output.join(""), /was found/);
+  });
+});
+
+test("reports invalid goal drafts and evaluation dates without partial writes", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const goalsPath = join(directory, "goals");
+    const invalidDraftPath = join(directory, "invalid-goal.json");
+    await writeFile(
+      invalidDraftPath,
+      JSON.stringify({
+        goalId: "invalid-window",
+        title: "Invalid window",
+        metric: "training-minutes",
+        target: 20,
+        startDate: "2026-09-10",
+        dueDate: "2026-09-01",
+      }),
+      "utf8",
+    );
+    const draftCapture = captureEnvironment();
+
+    assert.equal(
+      await runCli(
+        [
+          "goal",
+          "create",
+          "--from",
+          invalidDraftPath,
+          "--goals",
+          goalsPath,
+        ],
+        draftCapture.environment,
+      ),
+      1,
+    );
+    assert.match(draftCapture.errors.join(""), /goal draft invalid_goal/);
+    assert.deepEqual(
+      await new DevelopmentGoalFileRepository(goalsPath).list(),
+      [],
+    );
+
+    const dateCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "goal",
+          "list",
+          "--goals",
+          goalsPath,
+          "--journal",
+          join(directory, "journal"),
+          "--as-of",
+          "2026-02-30",
+        ],
+        dateCapture.environment,
+      ),
+      1,
+    );
+    assert.match(dateCapture.errors.join(""), /goal invalid at evaluatedOn/);
   });
 });

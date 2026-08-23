@@ -71,3 +71,9 @@ deduplicated, and every positive contribution retains an evidence reference.
 Goal persistence stores definitions only, one atomic private file per goal. Live
 progress always joins the repository definitions with reconstructed journal
 entries, preventing stored counters from drifting away from their evidence.
+
+The goal CLI performs that join at review time. Creation accepts an unversioned
+draft, storage writes the canonical versioned definition, and list or show output
+derives status from an explicit clock. Evidence views deliberately project only
+entry identity, time, and contribution so goal review does not duplicate journal
+notes into another privacy boundary.

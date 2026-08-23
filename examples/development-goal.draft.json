@@ -1,0 +1,9 @@
+{
+  "goalId": "new-ball-bowling-volume",
+  "title": "Build new-ball bowling volume",
+  "metric": "focus-minutes",
+  "target": 120,
+  "startDate": "2026-09-01",
+  "dueDate": "2026-09-30",
+  "focus": "bowling"
+}
