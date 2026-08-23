@@ -36,3 +36,7 @@ The storage-format slice serializes only canonical domain inputs plus explicit
 record metadata. It restores every record through the aggregate so persistence
 cannot override calculated values. Filesystem and browser adapters will depend on
 this contract without duplicating validation rules.
+
+The first filesystem adapter implements that contract with owner-only temporary
+files and atomic replacement. Its errors translate operating-system and record
+failures into stable application-facing categories without hiding their causes.

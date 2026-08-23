@@ -21,6 +21,10 @@ protect the invariants that later interfaces will depend on:
 - canonical save timestamps and explicit schema versions; and
 - restoration through domain validation instead of trusting stored totals.
 
+The first local adapter saves each plan through an owner-only temporary file and
+atomically replaces its destination. Corrupt, missing, unreadable, and unwritable
+paths remain distinct outcomes for command-line interfaces.
+
 ## Local verification
 
 Use Node.js 20 and install the exact locked dependencies:
