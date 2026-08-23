@@ -30,5 +30,9 @@ directory plan is guidance, not a request to generate empty scaffolding.
 
 The first slice is the training-session plan aggregate. It validates a proposed
 session and returns a normalized, immutable plan with total minutes, workload,
-and minutes grouped by training focus. Persistence and UI layers can consume this
-contract without duplicating its rules.
+and minutes grouped by training focus.
+
+The storage-format slice serializes only canonical domain inputs plus explicit
+record metadata. It restores every record through the aggregate so persistence
+cannot override calculated values. Filesystem and browser adapters will depend on
+this contract without duplicating validation rules.

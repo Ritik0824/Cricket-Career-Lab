@@ -9,14 +9,17 @@ repositories.
 
 ## First capability
 
-The initial domain module creates validated training-session plans. It protects
-the invariants that later interfaces and storage adapters will depend on:
+The initial domain module creates validated training-session plans. A versioned
+JSON record now gives local adapters a safe persistence boundary. Together they
+protect the invariants that later interfaces will depend on:
 
 - one to eight drills per session;
 - unique, stable drill identifiers;
 - bounded drill and session durations;
 - supported training focuses and intensity levels; and
-- deterministic focus and workload summaries.
+- deterministic focus and workload summaries;
+- canonical save timestamps and explicit schema versions; and
+- restoration through domain validation instead of trusting stored totals.
 
 ## Local verification
 

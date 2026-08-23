@@ -5,8 +5,8 @@ will be implemented and pushed in reviewable increments as development happens.
 
 ## Foundation
 
-- Create and validate a multi-drill training session.
-- Define stable, versioned records for private local storage.
+- [x] Create and validate a multi-drill training session.
+- [x] Define stable, versioned records for private local storage.
 - Add a command-line workflow for planning and completing a session.
 
 ## Training journal
