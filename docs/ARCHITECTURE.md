@@ -95,3 +95,9 @@ inventing a second data model. The storage boundary validates the envelope and
 every nested record before persistence. Restore preflights both repositories,
 applies an explicit conflict policy, and records reversible mutations so a later
 write failure can restore prior records or remove newly created ones.
+
+The first local HTTP boundary is a read-only loopback API. Pure routing owns URL,
+query, status, and privacy-safe projection contracts; the Node HTTP adapter owns
+socket lifecycle and response transport. It reuses repositories and deterministic
+review domains, rejects remote bindings, and converts storage failures to generic
+responses rather than leaking paths or private record details.

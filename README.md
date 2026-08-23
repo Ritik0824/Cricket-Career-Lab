@@ -45,6 +45,7 @@ npm run cli -- goal list --as-of 2026-09-30
 npm run cli -- workload week --ending 2026-09-30
 npm run cli -- workload month --month 2026-09
 npm run cli -- backup create --to .career/backups/career.json
+npm run serve
 ```
 
 See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
@@ -84,6 +85,10 @@ Versioned private backups preserve goal definitions and complete journal records
 in one owner-only file, with validation, privacy-safe inspection, explicit
 conflict policies, and rollback-aware restore. See
 [docs/PRIVATE_BACKUP.md](docs/PRIVATE_BACKUP.md).
+
+A dependency-free, read-only local API now exposes note-free journal summaries,
+live goal progress, and weekly or monthly review data to loopback clients. See
+[docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Local verification
 
