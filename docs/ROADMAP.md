@@ -12,8 +12,9 @@ will be implemented and pushed in reviewable increments as development happens.
 
 ## Training journal
 
-- Record completed drills, perceived effort, and private notes.
-- Compare planned time with completed time.
+- [x] Model completed drills, perceived effort, and private notes.
+- [x] Compare planned time with completed time in an immutable entry.
+- Persist versioned journal entries locally.
 - Filter the journal by date, focus, and intensity.
 
 ## Goals and workload

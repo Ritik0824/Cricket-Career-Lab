@@ -40,6 +40,11 @@ npm run cli -- plan show .career/plans/new-ball.json
 See [docs/CLI.md](docs/CLI.md) for JSON output, deterministic timestamps, exit
 statuses, and the complete draft workflow.
 
+The training-journal domain can also turn a plan into an immutable completed,
+partial, or missed entry with drill-level effort, private notes, and
+planned-versus-actual summaries. See
+[docs/TRAINING_JOURNAL.md](docs/TRAINING_JOURNAL.md).
+
 ## Local verification
 
 Use Node.js 20 and install the exact locked dependencies:

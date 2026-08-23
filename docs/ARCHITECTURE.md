@@ -45,3 +45,8 @@ The command-line boundary parses untrusted draft JSON into the domain, then uses
 the same file adapter as every future local interface. Argument parsing, output
 formatting, and command orchestration are separate modules so exit statuses and
 text contracts can be tested without replacing storage or domain behavior.
+
+The journal domain snapshots the visible plan contract into an immutable
+completion entry. It derives adherence and effort review from explicit drill
+results while keeping private notes inside the entry boundary. Storage and query
+adapters will consume this contract without recalculating its invariants.
