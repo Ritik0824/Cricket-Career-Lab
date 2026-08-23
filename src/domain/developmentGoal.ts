@@ -71,7 +71,7 @@ export class DevelopmentGoalValidationError extends Error {
 const MAX_GOAL_TARGET = 1_000_000;
 const MILLISECONDS_PER_DAY = 86_400_000;
 
-function normalizeGoalId(value: string): string {
+export function normalizeDevelopmentGoalId(value: string): string {
   const normalized = value.trim().toLowerCase();
 
   if (
@@ -233,7 +233,7 @@ export function createDevelopmentGoal(
   }
 
   return Object.freeze({
-    goalId: normalizeGoalId(input.goalId),
+    goalId: normalizeDevelopmentGoalId(input.goalId),
     title: normalizeTitle(input.title),
     metric,
     target,

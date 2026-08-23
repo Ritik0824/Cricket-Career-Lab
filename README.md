@@ -61,6 +61,9 @@ Personal development goals derive sessions, minutes, focus work, effort load, or
 consistency progress from exact journal evidence inside an inclusive target
 window. See [docs/DEVELOPMENT_GOALS.md](docs/DEVELOPMENT_GOALS.md).
 
+Goal definitions persist separately from progress in an owner-only versioned
+repository. See [docs/GOAL_STORAGE.md](docs/GOAL_STORAGE.md).
+
 ## Local verification
 
 Use Node.js 20 and install the exact locked dependencies:

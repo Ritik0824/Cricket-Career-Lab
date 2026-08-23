@@ -22,7 +22,8 @@ will be implemented and pushed in reviewable increments as development happens.
 
 - [x] Create measurable development goals with target dates.
 - [x] Connect completed sessions to exact goal evidence.
-- Persist and manage private goal definitions.
+- [x] Persist private versioned goal definitions.
+- Manage goals and live journal-derived progress through the CLI.
 - Review weekly workload without making medical or injury claims.
 
 ## Personal review

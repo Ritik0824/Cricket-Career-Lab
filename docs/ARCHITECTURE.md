@@ -67,3 +67,7 @@ independently so callers receive deterministic newest-first output.
 The development-goal domain evaluates immutable goal definitions against journal
 entries. Counters are derived rather than stored, duplicate entry identifiers are
 deduplicated, and every positive contribution retains an evidence reference.
+
+Goal persistence stores definitions only, one atomic private file per goal. Live
+progress always joins the repository definitions with reconstructed journal
+entries, preventing stored counters from drifting away from their evidence.

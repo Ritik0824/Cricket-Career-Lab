@@ -38,5 +38,6 @@ Progress percentage is capped at 100 while the real current value is retained.
 Days remaining are never negative. Evaluating several goals orders them by due
 date and identifier for deterministic review.
 
-Versioned goal persistence and CLI management remain separate boundaries that
-will consume this domain contract.
+The versioned private goal repository now stores definitions without progress.
+CLI management remains a separate boundary that will join goals to live journal
+evidence through this domain contract.
