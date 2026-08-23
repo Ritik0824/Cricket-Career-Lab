@@ -23,6 +23,6 @@ Error codes distinguish malformed JSON, invalid record shapes, unsupported schem
 versions, and records that violate current domain invariants. Unknown schema
 versions fail closed until an explicit migration is added.
 
-This module defines the data contract only. Filesystem, browser storage, and
-backup adapters will be implemented separately so their I/O behavior can be
-tested without weakening the record validation boundary.
+This module defines the data contract only. The implemented filesystem adapter
+consumes it through a separate atomic I/O boundary; future browser and backup
+adapters can do the same without weakening record validation.

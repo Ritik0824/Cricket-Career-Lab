@@ -71,7 +71,7 @@ const MAX_COMPLETED_SESSION_MINUTES = 240;
 const MAX_DRILL_NOTE_LENGTH = 500;
 const MAX_SESSION_NOTE_LENGTH = 1_000;
 
-function normalizeEntryId(value: string): string {
+export function normalizeTrainingJournalEntryId(value: string): string {
   const normalized = value.trim().toLowerCase();
 
   if (
@@ -293,7 +293,7 @@ export function completeTrainingSession(
   }
 
   return Object.freeze({
-    entryId: normalizeEntryId(input.entryId),
+    entryId: normalizeTrainingJournalEntryId(input.entryId),
     planTitle: input.plan.title,
     scheduledFor: input.plan.scheduledFor,
     completedAt: normalizeTimestamp(input.completedAt),

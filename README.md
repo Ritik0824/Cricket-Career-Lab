@@ -45,6 +45,10 @@ partial, or missed entry with drill-level effort, private notes, and
 planned-versus-actual summaries. See
 [docs/TRAINING_JOURNAL.md](docs/TRAINING_JOURNAL.md).
 
+Completed entries can be stored in an owner-only local journal directory using a
+versioned format that recalculates all review values when loaded. See
+[docs/JOURNAL_STORAGE.md](docs/JOURNAL_STORAGE.md).
+
 ## Local verification
 
 Use Node.js 20 and install the exact locked dependencies:

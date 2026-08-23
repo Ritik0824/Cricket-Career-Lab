@@ -3,6 +3,9 @@
 The filesystem adapter persists one versioned training-plan record per JSON file.
 It is intended for the command-line application and private local backups.
 
+Its atomic owner-only operations are shared with journal persistence so both
+formats have the same flush, replacement, cleanup, and error behavior.
+
 ## Save behavior
 
 `saveSessionPlanFile` validates and serializes the plan before touching disk. It

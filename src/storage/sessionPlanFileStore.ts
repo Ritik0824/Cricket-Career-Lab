@@ -1,14 +1,10 @@
-import { randomUUID } from "node:crypto";
-import {
-  mkdir,
-  open,
-  readFile,
-  rename,
-  rm,
-} from "node:fs/promises";
-import { basename, dirname, resolve } from "node:path";
-
 import type { SessionPlan } from "../domain/sessionPlan.js";
+import {
+  readPrivateTextFile,
+  resolvePrivateFilePath,
+  writePrivateTextFile,
+  PrivateFileError,
+} from "./privateFile.js";
 import {
   parseSessionPlanRecord,
   serializeSessionPlan,
@@ -40,32 +36,21 @@ export class SessionPlanFileError extends Error {
   }
 }
 
-function normalizeFilePath(filePath: string): string {
-  if (filePath.trim().length === 0) {
-    throw new SessionPlanFileError(
-      "INVALID_PATH",
-      filePath,
-      "session plan file path cannot be empty",
-    );
-  }
+function translatePrivateFileError(error: PrivateFileError): SessionPlanFileError {
+  const code =
+    error.code === "INVALID_PATH" ||
+    error.code === "NOT_FOUND" ||
+    error.code === "READ_FAILED" ||
+    error.code === "WRITE_FAILED"
+      ? error.code
+      : "WRITE_FAILED";
 
-  return resolve(filePath);
-}
-
-function readNodeErrorCode(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null || !("code" in error)) {
-    return undefined;
-  }
-
-  return typeof error.code === "string" ? error.code : undefined;
-}
-
-async function removeTemporaryFile(filePath: string): Promise<void> {
-  try {
-    await rm(filePath, { force: true });
-  } catch {
-    // Preserve the original write failure. A later save uses a unique temp name.
-  }
+  return new SessionPlanFileError(
+    code,
+    error.filePath,
+    error.message,
+    error,
+  );
 }
 
 export async function saveSessionPlanFile(
@@ -73,39 +58,28 @@ export async function saveSessionPlanFile(
   plan: SessionPlan,
   savedAt: string,
 ): Promise<StoredSessionPlan> {
-  const targetPath = normalizeFilePath(filePath);
-  const serialized = serializeSessionPlan(plan, savedAt);
-  const parentPath = dirname(targetPath);
-  const temporaryPath = resolve(
-    parentPath,
-    `.${basename(targetPath)}.${randomUUID()}.tmp`,
-  );
-  let handle: Awaited<ReturnType<typeof open>> | undefined;
+  let targetPath: string;
 
   try {
-    await mkdir(parentPath, { recursive: true, mode: 0o700 });
-    handle = await open(temporaryPath, "wx", 0o600);
-    await handle.writeFile(serialized, { encoding: "utf8" });
-    await handle.sync();
-    await handle.close();
-    handle = undefined;
-    await rename(temporaryPath, targetPath);
+    targetPath = resolvePrivateFilePath(filePath);
   } catch (error) {
-    if (handle !== undefined) {
-      try {
-        await handle.close();
-      } catch {
-        // The write error remains the useful failure for callers.
-      }
+    if (error instanceof PrivateFileError) {
+      throw translatePrivateFileError(error);
     }
 
-    await removeTemporaryFile(temporaryPath);
-    throw new SessionPlanFileError(
-      "WRITE_FAILED",
-      targetPath,
-      `could not save session plan to ${targetPath}`,
-      error,
-    );
+    throw error;
+  }
+
+  const serialized = serializeSessionPlan(plan, savedAt);
+
+  try {
+    await writePrivateTextFile(targetPath, serialized);
+  } catch (error) {
+    if (error instanceof PrivateFileError) {
+      throw translatePrivateFileError(error);
+    }
+
+    throw error;
   }
 
   return parseSessionPlanRecord(serialized);
@@ -114,27 +88,18 @@ export async function saveSessionPlanFile(
 export async function loadSessionPlanFile(
   filePath: string,
 ): Promise<StoredSessionPlan> {
-  const targetPath = normalizeFilePath(filePath);
+  let targetPath: string;
   let serialized: string;
 
   try {
-    serialized = await readFile(targetPath, { encoding: "utf8" });
+    targetPath = resolvePrivateFilePath(filePath);
+    serialized = await readPrivateTextFile(targetPath);
   } catch (error) {
-    if (readNodeErrorCode(error) === "ENOENT") {
-      throw new SessionPlanFileError(
-        "NOT_FOUND",
-        targetPath,
-        `session plan file does not exist at ${targetPath}`,
-        error,
-      );
+    if (error instanceof PrivateFileError) {
+      throw translatePrivateFileError(error);
     }
 
-    throw new SessionPlanFileError(
-      "READ_FAILED",
-      targetPath,
-      `could not read session plan from ${targetPath}`,
-      error,
-    );
+    throw error;
   }
 
   try {

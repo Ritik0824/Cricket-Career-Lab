@@ -32,6 +32,6 @@ Completed minutes may exceed planned minutes so a genuine extended drill remains
 visible. Individual drills are bounded at 120 minutes and an entry at 240 minutes
 to reject corrupt values.
 
-This slice defines completion behavior only. Versioned journal storage, journal
-collection filters, and CLI completion commands are separate application
-boundaries and will build on this immutable entry contract.
+This slice defines completion behavior only. The versioned journal record and
+private file repository now consume it through separate storage boundaries.
+Collection filters and CLI completion commands remain separate application work.

@@ -50,3 +50,7 @@ The journal domain snapshots the visible plan contract into an immutable
 completion entry. It derives adherence and effort review from explicit drill
 results while keeping private notes inside the entry boundary. Storage and query
 adapters will consume this contract without recalculating its invariants.
+
+Journal persistence stores one versioned entry per private file. The repository
+uses the same atomic file primitive as plan storage, treats corrupt records as
+visible failures, and derives list order from canonical completion timestamps.
