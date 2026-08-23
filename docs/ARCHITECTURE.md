@@ -59,3 +59,7 @@ The CLI completion boundary joins a validated saved plan with an untrusted
 completion draft, then persists the resulting domain entry. Journal list output
 keeps notes out of the default summary, while explicit show and JSON contracts
 make private detail available for local review and trusted tooling.
+
+Journal queries are pure domain operations over reconstructed entries. They
+normalize and validate every facet, never mutate repository results, and sort
+independently so callers receive deterministic newest-first output.

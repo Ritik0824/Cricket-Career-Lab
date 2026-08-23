@@ -234,3 +234,57 @@ test("rejects incomplete and ambiguous journal commands", () => {
     /unknown journal command export/,
   );
 });
+
+test("parses journal list query filters", () => {
+  assert.deepEqual(
+    parseCliArguments([
+      "journal",
+      "list",
+      "--from",
+      "2026-09-01",
+      "--to",
+      "2026-09-30",
+      "--focus",
+      "bowling",
+      "--intensity",
+      "moderate",
+      "--status",
+      "partial",
+      "--text",
+      "seam control",
+      "--limit",
+      "5",
+    ]),
+    {
+      kind: "journal-list",
+      journal: DEFAULT_JOURNAL_DIRECTORY,
+      json: false,
+      from: "2026-09-01",
+      to: "2026-09-30",
+      focus: "bowling",
+      intensity: "moderate",
+      status: "partial",
+      text: "seam control",
+      limit: 5,
+    },
+  );
+});
+
+test("rejects malformed and duplicate list filter options", () => {
+  assert.throws(
+    () => parseCliArguments(["journal", "list", "--limit", "many"]),
+    /requires an integer/,
+  );
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "journal",
+        "list",
+        "--status",
+        "partial",
+        "--status",
+        "missed",
+      ]),
+    /only be provided once/,
+  );
+});

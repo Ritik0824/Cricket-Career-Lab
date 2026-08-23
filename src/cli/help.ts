@@ -6,7 +6,7 @@ Usage:
   cricket-career-lab plan create --from <draft.json> --to <plan.json> [--saved-at <UTC timestamp>]
   cricket-career-lab plan show <plan.json> [--json]
   cricket-career-lab journal complete --plan <plan.json> --from <completion.json> [--journal <directory>] [--completed-at <UTC timestamp>]
-  cricket-career-lab journal list [--journal <directory>] [--json]
+  cricket-career-lab journal list [--journal <directory>] [--from <date>] [--to <date>] [--focus <focus>] [--intensity <level>] [--status <status>] [--text <query>] [--limit <count>] [--json]
   cricket-career-lab journal show <entry-id> [--journal <directory>] [--json]
   cricket-career-lab journal delete <entry-id> [--journal <directory>]
   cricket-career-lab --help
@@ -26,5 +26,11 @@ Options:
   --plan        Path to a validated versioned plan record.
   --journal     Journal directory; defaults to .career/journal.
   --completed-at  Canonical UTC timestamp; defaults to the current time.
+  --from, --to  Inclusive completion-date bounds in YYYY-MM-DD format.
+  --focus       Performed drill focus: batting, bowling, fielding, fitness, recovery.
+  --intensity   Performed drill intensity: low, moderate, high.
+  --status      Session outcome: completed, partial, missed.
+  --text        Search entry, plan, drill, and private note text.
+  --limit       Return 1 to 100 newest matching entries.
   --json        Emit canonical record JSON instead of a text summary.
   -h, --help    Show this help.`;

@@ -35,4 +35,5 @@ to reject corrupt values.
 This slice defines completion behavior only. The versioned journal record and
 private file repository now consume it through separate storage boundaries.
 The CLI completion workflow also consumes the same domain contract. Collection
-filters remain separate application work.
+filters now provide deterministic date, performed-focus, intensity, status, text,
+and limit queries without changing the stored entries.

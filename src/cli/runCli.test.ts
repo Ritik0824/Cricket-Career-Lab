@@ -6,6 +6,8 @@ import test from "node:test";
 
 import { loadSessionPlanFile } from "../storage/sessionPlanFileStore.js";
 import { TrainingJournalFileRepository } from "../storage/trainingJournalRepository.js";
+import { createSessionPlan } from "../domain/sessionPlan.js";
+import { completeTrainingSession } from "../domain/trainingJournal.js";
 import { runCli, type CliEnvironment } from "./runCli.js";
 
 const FIXED_NOW = new Date("2026-08-23T16:30:00.000Z");
@@ -346,5 +348,100 @@ test("reports completion-domain failures without creating a journal entry", asyn
       await new TrainingJournalFileRepository(journalPath).list(),
       [],
     );
+  });
+});
+
+test("filters journal lists through the public command", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const repository = new TrainingJournalFileRepository(directory);
+    const plan = createSessionPlan({
+      title: "Seam control session",
+      scheduledFor: "2026-09-10",
+      drills: [
+        {
+          id: "seam-control",
+          name: "Upright seam control",
+          focus: "bowling",
+          minutes: 20,
+          intensity: "moderate",
+        },
+      ],
+    });
+    await repository.save(
+      completeTrainingSession({
+        entryId: "seam-partial",
+        plan,
+        completedAt: "2026-09-10T09:00:00.000Z",
+        drills: [
+          {
+            drillId: "seam-control",
+            completedMinutes: 12,
+            perceivedEffort: 7,
+            note: "Seam stayed upright.",
+          },
+        ],
+      }),
+    );
+    await repository.save(
+      completeTrainingSession({
+        entryId: "seam-complete",
+        plan,
+        completedAt: "2026-09-11T09:00:00.000Z",
+        drills: [
+          {
+            drillId: "seam-control",
+            completedMinutes: 20,
+            perceivedEffort: 8,
+          },
+        ],
+      }),
+    );
+
+    const capture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "list",
+          "--journal",
+          directory,
+          "--from",
+          "2026-09-10",
+          "--to",
+          "2026-09-10",
+          "--focus",
+          "BOWLING",
+          "--intensity",
+          "moderate",
+          "--status",
+          "partial",
+          "--text",
+          "upright",
+          "--limit",
+          "1",
+        ],
+        capture.environment,
+      ),
+      0,
+    );
+    assert.match(capture.output.join(""), /seam-partial/);
+    assert.doesNotMatch(capture.output.join(""), /seam-complete/);
+
+    const invalidCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "journal",
+          "list",
+          "--journal",
+          directory,
+          "--focus",
+          "captaincy",
+        ],
+        invalidCapture.environment,
+      ),
+      1,
+    );
+    assert.match(invalidCapture.errors.join(""), /journal query invalid at focus/);
   });
 });

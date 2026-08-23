@@ -14,6 +14,10 @@ import {
   TrainingJournalValidationError,
 } from "../domain/trainingJournal.js";
 import {
+  filterTrainingJournal,
+  TrainingJournalQueryError,
+} from "../domain/trainingJournalQuery.js";
+import {
   loadSessionPlanFile,
   saveSessionPlanFile,
   SessionPlanFileError,
@@ -72,6 +76,10 @@ function describeError(error: unknown): string {
 
   if (error instanceof TrainingJournalValidationError) {
     return `journal entry invalid at ${error.field}: ${error.message}`;
+  }
+
+  if (error instanceof TrainingJournalQueryError) {
+    return `journal query invalid at ${error.field}: ${error.message}`;
   }
 
   if (error instanceof TrainingJournalRepositoryError) {
@@ -180,7 +188,17 @@ export async function runCli(
     const repository = new TrainingJournalFileRepository(command.journal);
 
     if (command.kind === "journal-list") {
-      const entries = await repository.list();
+      const entries = filterTrainingJournal(await repository.list(), {
+        ...(command.from === undefined ? {} : { from: command.from }),
+        ...(command.to === undefined ? {} : { to: command.to }),
+        ...(command.focus === undefined ? {} : { focus: command.focus }),
+        ...(command.intensity === undefined
+          ? {}
+          : { intensity: command.intensity }),
+        ...(command.status === undefined ? {} : { status: command.status }),
+        ...(command.text === undefined ? {} : { text: command.text }),
+        ...(command.limit === undefined ? {} : { limit: command.limit }),
+      });
       const output = command.json
         ? JSON.stringify(
             entries.map((entry) =>

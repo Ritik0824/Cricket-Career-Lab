@@ -22,6 +22,13 @@ export type CliCommand =
       readonly kind: "journal-list";
       readonly journal: string;
       readonly json: boolean;
+      readonly from?: string;
+      readonly to?: string;
+      readonly focus?: string;
+      readonly intensity?: string;
+      readonly status?: string;
+      readonly text?: string;
+      readonly limit?: number;
     }
   | {
       readonly kind: "journal-show";
@@ -55,6 +62,16 @@ interface JournalCompleteOptions {
   from?: string;
   journal?: string;
   completedAt?: string;
+}
+
+interface JournalListOptions {
+  from?: string;
+  to?: string;
+  focus?: string;
+  intensity?: string;
+  status?: string;
+  text?: string;
+  limit?: number;
 }
 
 function requireOptionValue(
@@ -230,6 +247,7 @@ function parseJournalList(argumentsList: readonly string[]): CliCommand {
   let journal = DEFAULT_JOURNAL_DIRECTORY;
   let journalProvided = false;
   let json = false;
+  const options: JournalListOptions = {};
 
   for (let index = 0; index < argumentsList.length; index += 1) {
     const argument = argumentsList[index];
@@ -248,6 +266,36 @@ function parseJournalList(argumentsList: readonly string[]): CliCommand {
       journal = requireOptionValue(argumentsList, index, argument);
       journalProvided = true;
       index += 1;
+    } else if (
+      argument === "--from" ||
+      argument === "--to" ||
+      argument === "--focus" ||
+      argument === "--intensity" ||
+      argument === "--status" ||
+      argument === "--text"
+    ) {
+      const key = argument.slice(2) as Exclude<keyof JournalListOptions, "limit">;
+
+      if (options[key] !== undefined) {
+        throw new CliUsageError(`${argument} may only be provided once`);
+      }
+
+      options[key] = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+    } else if (argument === "--limit") {
+      if (options.limit !== undefined) {
+        throw new CliUsageError("--limit may only be provided once");
+      }
+
+      const value = requireOptionValue(argumentsList, index, argument);
+      const limit = Number(value);
+
+      if (!Number.isInteger(limit)) {
+        throw new CliUsageError("--limit requires an integer");
+      }
+
+      options.limit = limit;
+      index += 1;
     } else {
       throw new CliUsageError(
         `unknown journal list option ${argument ?? "<missing>"}`,
@@ -255,7 +303,7 @@ function parseJournalList(argumentsList: readonly string[]): CliCommand {
     }
   }
 
-  return { kind: "journal-list", journal, json };
+  return { kind: "journal-list", journal, json, ...options };
 }
 
 function parseJournalEntryCommand(

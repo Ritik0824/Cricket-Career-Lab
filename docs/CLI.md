@@ -75,6 +75,21 @@ List entries newest first without displaying private notes:
 npm run cli -- journal list
 ```
 
+Filter by inclusive completion dates, performed focus or intensity, session
+status, private text, and result limit:
+
+```bash
+npm run cli -- journal list \
+  --from 2026-09-01 \
+  --to 2026-09-30 \
+  --focus bowling \
+  --status partial \
+  --text "seam control" \
+  --limit 10
+```
+
+See [JOURNAL_QUERIES.md](JOURNAL_QUERIES.md) for matching semantics and validation.
+
 Show a complete entry, including its private notes:
 
 ```bash

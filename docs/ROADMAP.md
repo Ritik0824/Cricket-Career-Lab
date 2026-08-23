@@ -16,7 +16,7 @@ will be implemented and pushed in reviewable increments as development happens.
 - [x] Model completed drills, perceived effort, and private notes.
 - [x] Compare planned time with completed time in an immutable entry.
 - [x] Persist versioned journal entries in a private local repository.
-- Filter the journal by date, focus, and intensity.
+- [x] Filter the journal by date, focus, intensity, status, and private text.
 
 ## Goals and workload
 
