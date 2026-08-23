@@ -57,6 +57,10 @@ Journal lists support inclusive completion dates, performed focus and intensity,
 status, private text, and bounded newest-first results. See
 [docs/JOURNAL_QUERIES.md](docs/JOURNAL_QUERIES.md).
 
+Personal development goals derive sessions, minutes, focus work, effort load, or
+consistency progress from exact journal evidence inside an inclusive target
+window. See [docs/DEVELOPMENT_GOALS.md](docs/DEVELOPMENT_GOALS.md).
+
 ## Local verification
 
 Use Node.js 20 and install the exact locked dependencies:

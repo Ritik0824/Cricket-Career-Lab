@@ -63,3 +63,7 @@ make private detail available for local review and trusted tooling.
 Journal queries are pure domain operations over reconstructed entries. They
 normalize and validate every facet, never mutate repository results, and sort
 independently so callers receive deterministic newest-first output.
+
+The development-goal domain evaluates immutable goal definitions against journal
+entries. Counters are derived rather than stored, duplicate entry identifiers are
+deduplicated, and every positive contribution retains an evidence reference.

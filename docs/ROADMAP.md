@@ -20,8 +20,9 @@ will be implemented and pushed in reviewable increments as development happens.
 
 ## Goals and workload
 
-- Create measurable development goals with target dates.
-- Connect completed sessions to relevant goals.
+- [x] Create measurable development goals with target dates.
+- [x] Connect completed sessions to exact goal evidence.
+- Persist and manage private goal definitions.
 - Review weekly workload without making medical or injury claims.
 
 ## Personal review
