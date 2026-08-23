@@ -9,14 +9,15 @@ repositories.
 
 ## First capability
 
-The initial domain module creates validated training-session plans. A versioned
-JSON record now gives local adapters a safe persistence boundary. Together they
-protect the invariants that later interfaces will depend on:
+The initial product slice creates, saves, and reviews validated training-session
+plans. A versioned JSON record gives local adapters a safe persistence boundary.
+Together these modules protect the invariants that later interfaces will depend
+on:
 
 - one to eight drills per session;
 - unique, stable drill identifiers;
 - bounded drill and session durations;
-- supported training focuses and intensity levels; and
+- supported training focuses and intensity levels;
 - deterministic focus and workload summaries;
 - canonical save timestamps and explicit schema versions; and
 - restoration through domain validation instead of trusting stored totals.
@@ -24,6 +25,20 @@ protect the invariants that later interfaces will depend on:
 The first local adapter saves each plan through an owner-only temporary file and
 atomically replaces its destination. Corrupt, missing, unreadable, and unwritable
 paths remain distinct outcomes for command-line interfaces.
+
+## Command-line quick start
+
+Create a private plan from the included example and review it locally:
+
+```bash
+npm run cli -- plan create \
+  --from examples/session-plan.draft.json \
+  --to .career/plans/new-ball.json
+npm run cli -- plan show .career/plans/new-ball.json
+```
+
+See [docs/CLI.md](docs/CLI.md) for JSON output, deterministic timestamps, exit
+statuses, and the complete draft workflow.
 
 ## Local verification
 

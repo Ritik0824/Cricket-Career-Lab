@@ -1,0 +1,20 @@
+{
+  "title": "New-ball accuracy",
+  "scheduledFor": "2026-09-05",
+  "drills": [
+    {
+      "id": "fourth-stump-channel",
+      "name": "Fourth-stump target channel",
+      "focus": "bowling",
+      "minutes": 24,
+      "intensity": "high"
+    },
+    {
+      "id": "follow-through-balance",
+      "name": "Follow-through balance",
+      "focus": "fitness",
+      "minutes": 12,
+      "intensity": "low"
+    }
+  ]
+}

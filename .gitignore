@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+.career/
 .env
 .env.*
 !.env.example

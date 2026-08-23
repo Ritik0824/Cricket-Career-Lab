@@ -8,7 +8,7 @@ will be implemented and pushed in reviewable increments as development happens.
 - [x] Create and validate a multi-drill training session.
 - [x] Define stable, versioned records for private local storage.
 - [x] Save and restore a training plan through an atomic local-file adapter.
-- Add a command-line workflow for planning and completing a session.
+- [x] Add a command-line workflow for creating and reviewing a planned session.
 
 ## Training journal
 

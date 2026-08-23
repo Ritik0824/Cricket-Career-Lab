@@ -40,3 +40,8 @@ this contract without duplicating validation rules.
 The first filesystem adapter implements that contract with owner-only temporary
 files and atomic replacement. Its errors translate operating-system and record
 failures into stable application-facing categories without hiding their causes.
+
+The command-line boundary parses untrusted draft JSON into the domain, then uses
+the same file adapter as every future local interface. Argument parsing, output
+formatting, and command orchestration are separate modules so exit statuses and
+text contracts can be tested without replacing storage or domain behavior.
