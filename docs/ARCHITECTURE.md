@@ -77,3 +77,9 @@ draft, storage writes the canonical versioned definition, and list or show outpu
 derives status from an explicit clock. Evidence views deliberately project only
 entry identity, time, and contribution so goal review does not duplicate journal
 notes into another privacy boundary.
+
+Weekly workload review is another pure projection over reconstructed journal
+entries. It assigns deduplicated entries to two fixed UTC date windows, returns
+immutable summaries and arithmetic comparisons, and keeps medical interpretation
+outside the product boundary. The CLI owns clock selection and rendering, while
+the domain remains deterministic and independent of storage.

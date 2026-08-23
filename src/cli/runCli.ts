@@ -27,6 +27,10 @@ import {
   TrainingJournalQueryError,
 } from "../domain/trainingJournalQuery.js";
 import {
+  buildWeeklyWorkloadReview,
+  WeeklyWorkloadValidationError,
+} from "../domain/weeklyWorkload.js";
+import {
   DevelopmentGoalFileRepository,
   DevelopmentGoalRepositoryError,
 } from "../storage/developmentGoalRepository.js";
@@ -58,6 +62,7 @@ import {
 } from "./formatGoal.js";
 import { formatJournalEntry, formatJournalList } from "./formatJournal.js";
 import { formatSessionPlan } from "./formatPlan.js";
+import { formatWeeklyWorkloadReview } from "./formatWorkload.js";
 import { CLI_HELP } from "./help.js";
 
 export interface CliEnvironment {
@@ -105,6 +110,10 @@ function describeError(error: unknown): string {
 
   if (error instanceof TrainingJournalQueryError) {
     return `journal query invalid at ${error.field}: ${error.message}`;
+  }
+
+  if (error instanceof WeeklyWorkloadValidationError) {
+    return `workload review invalid at ${error.field}: ${error.message}`;
   }
 
   if (error instanceof DevelopmentGoalValidationError) {
@@ -291,6 +300,19 @@ export async function runCli(
     }
 
     const repository = new TrainingJournalFileRepository(command.journal);
+
+    if (command.kind === "workload-week") {
+      const entries = await repository.list();
+      const ending =
+        command.ending ?? environment.now().toISOString().slice(0, 10);
+      const review = buildWeeklyWorkloadReview(entries, ending);
+      const output = command.json
+        ? JSON.stringify(review, null, 2)
+        : formatWeeklyWorkloadReview(review);
+
+      environment.writeOutput(`${output}\n`);
+      return 0;
+    }
 
     if (command.kind === "journal-list") {
       const entries = filterTrainingJournal(await repository.list(), {

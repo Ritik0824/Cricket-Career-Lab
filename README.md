@@ -42,6 +42,7 @@ npm run cli -- journal list
 npm run cli -- goal create \
   --from examples/development-goal.draft.json
 npm run cli -- goal list --as-of 2026-09-30
+npm run cli -- workload week --ending 2026-09-30
 ```
 
 See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
@@ -68,6 +69,10 @@ Goal definitions persist separately from progress in an owner-only versioned
 repository. The CLI creates definitions and joins them with current journal
 evidence for list and detail views. See
 [docs/GOAL_STORAGE.md](docs/GOAL_STORAGE.md).
+
+Weekly workload review compares two explicit seven-day windows across session,
+time, effort, focus, and intensity measures without making health or injury-risk
+claims. See [docs/WEEKLY_WORKLOAD.md](docs/WEEKLY_WORKLOAD.md).
 
 ## Local verification
 

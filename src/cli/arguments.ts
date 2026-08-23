@@ -65,6 +65,12 @@ export type CliCommand =
       readonly kind: "goal-delete";
       readonly goalId: string;
       readonly goals: string;
+    }
+  | {
+      readonly kind: "workload-week";
+      readonly journal: string;
+      readonly ending?: string;
+      readonly json: boolean;
     };
 
 export const DEFAULT_JOURNAL_DIRECTORY = ".career/journal";
@@ -584,6 +590,64 @@ function parseGoalCommand(
   throw new CliUsageError(`unknown goal command ${action ?? "<missing>"}`);
 }
 
+function parseWorkloadWeek(argumentsList: readonly string[]): CliCommand {
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let ending: string | undefined;
+  let journalProvided = false;
+  let json = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--json") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument === "--journal") {
+      if (journalProvided) {
+        throw new CliUsageError("--journal may only be provided once");
+      }
+
+      journal = requireOptionValue(argumentsList, index, argument);
+      journalProvided = true;
+      index += 1;
+    } else if (argument === "--ending") {
+      if (ending !== undefined) {
+        throw new CliUsageError("--ending may only be provided once");
+      }
+
+      ending = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+    } else {
+      throw new CliUsageError(
+        `unknown workload week option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  return {
+    kind: "workload-week",
+    journal,
+    ...(ending === undefined ? {} : { ending }),
+    json,
+  };
+}
+
+function parseWorkloadCommand(
+  action: string | undefined,
+  remaining: readonly string[],
+): CliCommand {
+  if (action === "week") {
+    return parseWorkloadWeek(remaining);
+  }
+
+  throw new CliUsageError(
+    `unknown workload command ${action ?? "<missing>"}`,
+  );
+}
+
 export function parseCliArguments(argumentsList: readonly string[]): CliCommand {
   if (
     argumentsList.length === 0 ||
@@ -615,6 +679,10 @@ export function parseCliArguments(argumentsList: readonly string[]): CliCommand 
 
   if (scope === "goal") {
     return parseGoalCommand(action, remaining);
+  }
+
+  if (scope === "workload") {
+    return parseWorkloadCommand(action, remaining);
   }
 
   throw new CliUsageError(`unknown command ${scope ?? "<missing>"}`);

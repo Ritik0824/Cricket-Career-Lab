@@ -143,6 +143,21 @@ npm run cli -- goal delete new-ball-bowling-volume
 Deleting a missing goal is also an idempotent success. Derived progress is never
 stored, so every later review reflects corrected or removed journal entries.
 
+## Review weekly workload
+
+Compare a seven-day window with the immediately preceding seven days:
+
+```bash
+npm run cli -- workload week --ending 2026-09-14
+```
+
+The ending date is inclusive. The command accepts `--journal <directory>` and
+`--json`; without `--ending`, it uses the current UTC calendar date. Both outputs
+derive minutes, effort load, focus, planned intensity, session count, active days,
+and exact entry identifiers from validated journal records. Neither output
+contains journal notes or interprets the comparison as a health or injury-risk
+assessment. See [WEEKLY_WORKLOAD.md](WEEKLY_WORKLOAD.md).
+
 Usage mistakes exit with status `2`. Draft, record, and filesystem failures exit
 with status `1`; successful commands and help exit with status `0`. Error details
 are written to standard error so JSON output remains safe to pipe.

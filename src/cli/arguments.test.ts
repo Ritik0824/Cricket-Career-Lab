@@ -375,3 +375,51 @@ test("rejects incomplete and ambiguous goal commands", () => {
     /unknown goal command archive/,
   );
 });
+
+test("parses weekly workload review options", () => {
+  assert.deepEqual(parseCliArguments(["workload", "week"]), {
+    kind: "workload-week",
+    journal: DEFAULT_JOURNAL_DIRECTORY,
+    json: false,
+  });
+  assert.deepEqual(
+    parseCliArguments([
+      "workload",
+      "week",
+      "--journal",
+      "private/journal",
+      "--ending",
+      "2026-09-14",
+      "--json",
+    ]),
+    {
+      kind: "workload-week",
+      journal: "private/journal",
+      ending: "2026-09-14",
+      json: true,
+    },
+  );
+});
+
+test("rejects unsupported or repeated workload options", () => {
+  assert.throws(
+    () => parseCliArguments(["workload", "month"]),
+    /unknown workload command month/,
+  );
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "workload",
+        "week",
+        "--ending",
+        "2026-09-14",
+        "--ending",
+        "2026-09-21",
+      ]),
+    /only be provided once/,
+  );
+  assert.throws(
+    () => parseCliArguments(["workload", "week", "--risk"]),
+    /unknown workload week option --risk/,
+  );
+});

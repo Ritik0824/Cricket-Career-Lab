@@ -650,3 +650,131 @@ test("reports invalid goal drafts and evaluation dates without partial writes", 
     assert.match(dateCapture.errors.join(""), /goal invalid at evaluatedOn/);
   });
 });
+
+test("reviews weekly workload through text and privacy-safe JSON", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const repository = new TrainingJournalFileRepository(directory);
+    const plan = createSessionPlan({
+      title: "Batting workload",
+      scheduledFor: "2026-09-04",
+      drills: [
+        {
+          id: "range-hitting",
+          name: "Range hitting",
+          focus: "batting",
+          minutes: 20,
+          intensity: "high",
+        },
+      ],
+    });
+    await repository.save(
+      completeTrainingSession({
+        entryId: "previous-range-entry",
+        plan,
+        completedAt: "2026-09-04T08:00:00.000Z",
+        drills: [
+          {
+            drillId: "range-hitting",
+            completedMinutes: 20,
+            perceivedEffort: 8,
+          },
+        ],
+      }),
+    );
+    await repository.save(
+      completeTrainingSession({
+        entryId: "current-range-entry",
+        plan,
+        completedAt: "2026-09-10T08:00:00.000Z",
+        drills: [
+          {
+            drillId: "range-hitting",
+            completedMinutes: 12,
+            perceivedEffort: 7,
+            note: "Private bat-path cue.",
+          },
+        ],
+        sessionNote: "Private review note.",
+      }),
+    );
+
+    const textCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "workload",
+          "week",
+          "--journal",
+          directory,
+          "--ending",
+          "2026-09-14",
+        ],
+        textCapture.environment,
+      ),
+      0,
+    );
+    assert.match(textCapture.output.join(""), /Current week: 2026-09-08/);
+    assert.match(textCapture.output.join(""), /12 vs 20 min/);
+    assert.match(textCapture.output.join(""), /current-range-entry/);
+    assert.doesNotMatch(textCapture.output.join(""), /Private/);
+
+    const jsonCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "workload",
+          "week",
+          "--journal",
+          directory,
+          "--ending",
+          "2026-09-14",
+          "--json",
+        ],
+        jsonCapture.environment,
+      ),
+      0,
+    );
+    const review = JSON.parse(jsonCapture.output.join("")) as {
+      current: { completedMinutes: number };
+      previous: { completedMinutes: number };
+    };
+    assert.equal(review.current.completedMinutes, 12);
+    assert.equal(review.previous.completedMinutes, 20);
+    assert.doesNotMatch(jsonCapture.output.join(""), /Private/);
+
+    const invalidCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "workload",
+          "week",
+          "--journal",
+          directory,
+          "--ending",
+          "2026-09-31",
+        ],
+        invalidCapture.environment,
+      ),
+      1,
+    );
+    assert.match(
+      invalidCapture.errors.join(""),
+      /workload review invalid at weekEnding/,
+    );
+  });
+});
+
+test("uses the injected UTC date for workload reviews", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const capture = captureEnvironment();
+
+    assert.equal(
+      await runCli(
+        ["workload", "week", "--journal", directory],
+        capture.environment,
+      ),
+      0,
+    );
+    assert.match(capture.output.join(""), /ending 2026-08-23/);
+  });
+});

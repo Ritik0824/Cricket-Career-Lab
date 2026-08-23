@@ -168,6 +168,21 @@ test("compiled executable creates and displays a private plan", async () => {
     assert.match(showGoal.stdout, /Status: In-progress/);
     assert.match(showGoal.stdout, /Progress: 18\/20 min \(90%\)/);
     assert.match(showGoal.stdout, /running-entry \| \+18/);
+
+    const workload = await runExecutable([
+      "workload",
+      "week",
+      "--journal",
+      journalPath,
+      "--ending",
+      "2026-09-07",
+    ]);
+    assert.equal(workload.exitCode, 0);
+    assert.equal(workload.stderr, "");
+    assert.match(workload.stdout, /Current week: 2026-09-01 to 2026-09-07/);
+    assert.match(workload.stdout, /Completed time: 18 min/);
+    assert.match(workload.stdout, /Current entries: running-entry/);
+    assert.match(workload.stdout, /does not assess readiness/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

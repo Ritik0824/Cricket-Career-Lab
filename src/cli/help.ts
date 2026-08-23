@@ -13,6 +13,7 @@ Usage:
   cricket-career-lab goal list [--goals <directory>] [--journal <directory>] [--as-of <date>] [--json]
   cricket-career-lab goal show <goal-id> [--goals <directory>] [--journal <directory>] [--as-of <date>] [--json]
   cricket-career-lab goal delete <goal-id> [--goals <directory>]
+  cricket-career-lab workload week [--journal <directory>] [--ending <date>] [--json]
   cricket-career-lab --help
 
 Commands:
@@ -26,6 +27,7 @@ Commands:
   goal list         List goals with progress derived from journal evidence.
   goal show         Show one goal with exact contributing journal entries.
   goal delete       Delete one goal definition without deleting journal data.
+  workload week     Compare an explicit seven-day window with the prior week.
 
 Options:
   --from        Path to an unversioned training-plan draft.
@@ -36,6 +38,7 @@ Options:
   --goals       Goal directory; defaults to .career/goals.
   --completed-at  Canonical UTC timestamp; defaults to the current time.
   --as-of       Goal evaluation date in YYYY-MM-DD; defaults to today.
+  --ending      Weekly review end date in YYYY-MM-DD; defaults to today.
   --from, --to  Inclusive completion-date bounds in YYYY-MM-DD format.
   --focus       Performed drill focus: batting, bowling, fielding, fitness, recovery.
   --intensity   Performed drill intensity: low, moderate, high.
