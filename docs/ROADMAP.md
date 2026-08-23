@@ -29,7 +29,7 @@ will be implemented and pushed in reviewable increments as development happens.
 ## Personal review
 
 - [x] Produce deterministic weekly and monthly summaries.
-- Export and restore a versioned private backup.
+- [x] Export and restore a versioned private backup.
 - Add an accessible local web interface after domain contracts stabilize.
 
 Features will be revised when real use reveals better priorities. Empty modules,

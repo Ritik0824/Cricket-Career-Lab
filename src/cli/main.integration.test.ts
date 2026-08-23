@@ -198,6 +198,51 @@ test("compiled executable creates and displays a private plan", async () => {
     assert.match(monthly.stdout, /Completed time: 18 min/);
     assert.match(monthly.stdout, /Longest active-day streak: 1 day/);
     assert.match(monthly.stdout, /Current evidence: running-entry/);
+
+    const backupPath = join(directory, "career-backup.json");
+    const backup = await runExecutable([
+      "backup",
+      "create",
+      "--to",
+      backupPath,
+      "--goals",
+      goalsPath,
+      "--journal",
+      journalPath,
+      "--exported-at",
+      "2026-10-01T08:00:00.000Z",
+    ]);
+    assert.equal(backup.exitCode, 0);
+    assert.equal(backup.stderr, "");
+    assert.match(backup.stdout, /Goals: 1/);
+    assert.match(backup.stdout, /Journal entries: 1/);
+    assert.doesNotMatch(backup.stdout, /Turning technique improved/);
+
+    const restoredGoals = join(directory, "restored-goals");
+    const restoredJournal = join(directory, "restored-journal");
+    const restore = await runExecutable([
+      "backup",
+      "restore",
+      backupPath,
+      "--goals",
+      restoredGoals,
+      "--journal",
+      restoredJournal,
+    ]);
+    assert.equal(restore.exitCode, 0);
+    assert.equal(restore.stderr, "");
+    assert.match(restore.stdout, /Goals: 1 created/);
+    assert.match(restore.stdout, /Journal entries: 1 created/);
+
+    const restoredJournalEntry = await runExecutable([
+      "journal",
+      "show",
+      "running-entry",
+      "--journal",
+      restoredJournal,
+    ]);
+    assert.equal(restoredJournalEntry.exitCode, 0);
+    assert.match(restoredJournalEntry.stdout, /Turning technique improved/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

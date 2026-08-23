@@ -44,6 +44,7 @@ npm run cli -- goal create \
 npm run cli -- goal list --as-of 2026-09-30
 npm run cli -- workload week --ending 2026-09-30
 npm run cli -- workload month --month 2026-09
+npm run cli -- backup create --to .career/backups/career.json
 ```
 
 See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
@@ -78,6 +79,11 @@ claims. See [docs/WEEKLY_WORKLOAD.md](docs/WEEKLY_WORKLOAD.md).
 Calendar-month review adds seven-day segments, consecutive active-day streaks,
 busiest-day evidence, and previous-month comparison. See
 [docs/MONTHLY_REVIEW.md](docs/MONTHLY_REVIEW.md).
+
+Versioned private backups preserve goal definitions and complete journal records
+in one owner-only file, with validation, privacy-safe inspection, explicit
+conflict policies, and rollback-aware restore. See
+[docs/PRIVATE_BACKUP.md](docs/PRIVATE_BACKUP.md).
 
 ## Local verification
 

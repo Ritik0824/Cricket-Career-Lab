@@ -7,6 +7,7 @@ import test from "node:test";
 import { loadSessionPlanFile } from "../storage/sessionPlanFileStore.js";
 import { DevelopmentGoalFileRepository } from "../storage/developmentGoalRepository.js";
 import { TrainingJournalFileRepository } from "../storage/trainingJournalRepository.js";
+import { createDevelopmentGoal } from "../domain/developmentGoal.js";
 import { createSessionPlan } from "../domain/sessionPlan.js";
 import { completeTrainingSession } from "../domain/trainingJournal.js";
 import { runCli, type CliEnvironment } from "./runCli.js";
@@ -832,5 +833,172 @@ test("uses the injected UTC date for workload reviews", async () => {
       0,
     );
     assert.match(monthCapture.output.join(""), /review — 2026-08/);
+  });
+});
+
+test("creates, inspects, and restores a private career backup", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const sourceGoals = join(directory, "source-goals");
+    const sourceJournal = join(directory, "source-journal");
+    const targetGoals = join(directory, "target-goals");
+    const targetJournal = join(directory, "target-journal");
+    const backupPath = join(directory, "backups", "career.json");
+    await new DevelopmentGoalFileRepository(sourceGoals).save(
+      createDevelopmentGoal({
+        goalId: "backup-volume",
+        title: "Backup training volume",
+        metric: "training-minutes",
+        target: 60,
+        startDate: "2026-09-01",
+        dueDate: "2026-09-30",
+      }),
+    );
+    const plan = createSessionPlan({
+      title: "Backup fielding",
+      scheduledFor: "2026-09-10",
+      drills: [
+        {
+          id: "backup-catches",
+          name: "Backup catches",
+          focus: "fielding",
+          minutes: 20,
+          intensity: "moderate",
+        },
+      ],
+    });
+    await new TrainingJournalFileRepository(sourceJournal).save(
+      completeTrainingSession({
+        entryId: "backup-fielding-entry",
+        plan,
+        completedAt: "2026-09-10T08:00:00.000Z",
+        drills: [
+          {
+            drillId: "backup-catches",
+            completedMinutes: 18,
+            perceivedEffort: 7,
+            note: "Private backup catch cue.",
+          },
+        ],
+        sessionNote: "Private backup review.",
+      }),
+    );
+
+    const createCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "backup",
+          "create",
+          "--to",
+          backupPath,
+          "--goals",
+          sourceGoals,
+          "--journal",
+          sourceJournal,
+          "--exported-at",
+          "2026-10-01T08:00:00.000Z",
+        ],
+        createCapture.environment,
+      ),
+      0,
+    );
+    assert.match(createCapture.output.join(""), /Goals: 1/);
+    assert.match(createCapture.output.join(""), /Journal entries: 1/);
+    assert.doesNotMatch(createCapture.output.join(""), /Private backup/);
+
+    const inspectCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["backup", "inspect", backupPath, "--json"],
+        inspectCapture.environment,
+      ),
+      0,
+    );
+    const summary = JSON.parse(inspectCapture.output.join("")) as {
+      version: number;
+      goalIds: string[];
+      journalEntries: Array<{ entryId: string }>;
+    };
+    assert.equal(summary.version, 1);
+    assert.deepEqual(summary.goalIds, ["backup-volume"]);
+    assert.equal(summary.journalEntries[0]?.entryId, "backup-fielding-entry");
+    assert.doesNotMatch(inspectCapture.output.join(""), /Private backup/);
+
+    const restoreCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "backup",
+          "restore",
+          backupPath,
+          "--goals",
+          targetGoals,
+          "--journal",
+          targetJournal,
+        ],
+        restoreCapture.environment,
+      ),
+      0,
+    );
+    assert.match(restoreCapture.output.join(""), /Goals: 1 created/);
+    assert.match(restoreCapture.output.join(""), /Journal entries: 1 created/);
+    assert.equal(
+      (await new DevelopmentGoalFileRepository(targetGoals).load("backup-volume"))
+        .target,
+      60,
+    );
+    assert.equal(
+      (
+        await new TrainingJournalFileRepository(targetJournal).load(
+          "backup-fielding-entry",
+        )
+      ).sessionNote,
+      "Private backup review.",
+    );
+
+    const conflictCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "backup",
+          "restore",
+          backupPath,
+          "--goals",
+          targetGoals,
+          "--journal",
+          targetJournal,
+        ],
+        conflictCapture.environment,
+      ),
+      1,
+    );
+    assert.match(conflictCapture.errors.join(""), /backup conflict/);
+  });
+});
+
+test("reports invalid backup export timestamps without writing a file", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const backupPath = join(directory, "career.json");
+    const capture = captureEnvironment();
+
+    assert.equal(
+      await runCli(
+        [
+          "backup",
+          "create",
+          "--to",
+          backupPath,
+          "--goals",
+          join(directory, "goals"),
+          "--journal",
+          join(directory, "journal"),
+          "--exported-at",
+          "invalid",
+        ],
+        capture.environment,
+      ),
+      1,
+    );
+    assert.match(capture.errors.join(""), /backup record invalid_timestamp/);
   });
 });

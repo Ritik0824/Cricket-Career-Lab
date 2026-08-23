@@ -169,6 +169,28 @@ default. It adds seven-day segments, the longest active-date streak, and
 busiest-day evidence. Journal notes remain excluded. See
 [MONTHLY_REVIEW.md](MONTHLY_REVIEW.md).
 
+## Back up and restore private data
+
+Export goals and full journal records to an owner-only versioned file:
+
+```bash
+npm run cli -- backup create --to .career/backups/career.json
+```
+
+Use `backup inspect <backup.json> [--json]` to validate and summarize the file.
+Both inspection formats omit private notes. Restore defaults to a fail-on-conflict
+preflight:
+
+```bash
+npm run cli -- backup restore .career/backups/career.json
+```
+
+Pass `--conflicts skip` to preserve matching destinations or `--conflicts replace`
+to replace them. Create accepts `--goals`, `--journal`, and `--exported-at`;
+restore accepts `--goals` and `--journal`. See
+[PRIVATE_BACKUP.md](PRIVATE_BACKUP.md) for sensitive-file handling and rollback
+semantics.
+
 Usage mistakes exit with status `2`. Draft, record, and filesystem failures exit
 with status `1`; successful commands and help exit with status `0`. Error details
 are written to standard error so JSON output remains safe to pipe.

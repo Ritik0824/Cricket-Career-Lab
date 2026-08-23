@@ -77,6 +77,25 @@ export type CliCommand =
       readonly journal: string;
       readonly month?: string;
       readonly json: boolean;
+    }
+  | {
+      readonly kind: "backup-create";
+      readonly to: string;
+      readonly goals: string;
+      readonly journal: string;
+      readonly exportedAt?: string;
+    }
+  | {
+      readonly kind: "backup-inspect";
+      readonly filePath: string;
+      readonly json: boolean;
+    }
+  | {
+      readonly kind: "backup-restore";
+      readonly filePath: string;
+      readonly goals: string;
+      readonly journal: string;
+      readonly conflicts: "fail" | "skip" | "replace";
     };
 
 export const DEFAULT_JOURNAL_DIRECTORY = ".career/journal";
@@ -703,6 +722,171 @@ function parseWorkloadCommand(
   );
 }
 
+function parseBackupCreate(argumentsList: readonly string[]): CliCommand {
+  let to: string | undefined;
+  let goals = DEFAULT_GOAL_DIRECTORY;
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let exportedAt: string | undefined;
+  const provided = new Set<string>();
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (
+      argument !== "--to" &&
+      argument !== "--goals" &&
+      argument !== "--journal" &&
+      argument !== "--exported-at"
+    ) {
+      throw new CliUsageError(
+        `unknown backup create option ${argument ?? "<missing>"}`,
+      );
+    }
+
+    if (provided.has(argument)) {
+      throw new CliUsageError(`${argument} may only be provided once`);
+    }
+
+    provided.add(argument);
+    const value = requireOptionValue(argumentsList, index, argument);
+    index += 1;
+
+    if (argument === "--to") {
+      to = value;
+    } else if (argument === "--goals") {
+      goals = value;
+    } else if (argument === "--journal") {
+      journal = value;
+    } else {
+      exportedAt = value;
+    }
+  }
+
+  if (to === undefined) {
+    throw new CliUsageError("backup create requires --to <backup.json>");
+  }
+
+  return {
+    kind: "backup-create",
+    to,
+    goals,
+    journal,
+    ...(exportedAt === undefined ? {} : { exportedAt }),
+  };
+}
+
+function parseBackupInspect(argumentsList: readonly string[]): CliCommand {
+  let filePath: string | undefined;
+  let json = false;
+
+  for (const argument of argumentsList) {
+    if (argument === "--json") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument.startsWith("--")) {
+      throw new CliUsageError(`unknown backup inspect option ${argument}`);
+    } else if (filePath === undefined) {
+      filePath = argument;
+    } else {
+      throw new CliUsageError(`unexpected backup inspect argument ${argument}`);
+    }
+  }
+
+  if (filePath === undefined) {
+    throw new CliUsageError("backup inspect requires <backup.json>");
+  }
+
+  return { kind: "backup-inspect", filePath, json };
+}
+
+function parseBackupRestore(argumentsList: readonly string[]): CliCommand {
+  let filePath: string | undefined;
+  let goals = DEFAULT_GOAL_DIRECTORY;
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let conflicts: "fail" | "skip" | "replace" = "fail";
+  const provided = new Set<string>();
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (
+      argument === "--goals" ||
+      argument === "--journal" ||
+      argument === "--conflicts"
+    ) {
+      if (provided.has(argument)) {
+        throw new CliUsageError(`${argument} may only be provided once`);
+      }
+
+      provided.add(argument);
+      const value = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+
+      if (argument === "--goals") {
+        goals = value;
+      } else if (argument === "--journal") {
+        journal = value;
+      } else {
+        const normalized = value.toLowerCase();
+
+        if (
+          normalized !== "fail" &&
+          normalized !== "skip" &&
+          normalized !== "replace"
+        ) {
+          throw new CliUsageError(
+            "--conflicts must be one of fail, skip, replace",
+          );
+        }
+
+        conflicts = normalized;
+      }
+    } else if (argument === undefined || argument.startsWith("--")) {
+      throw new CliUsageError(
+        `unknown backup restore option ${argument ?? "<missing>"}`,
+      );
+    } else if (filePath === undefined) {
+      filePath = argument;
+    } else {
+      throw new CliUsageError(`unexpected backup restore argument ${argument}`);
+    }
+  }
+
+  if (filePath === undefined) {
+    throw new CliUsageError("backup restore requires <backup.json>");
+  }
+
+  return {
+    kind: "backup-restore",
+    filePath,
+    goals,
+    journal,
+    conflicts,
+  };
+}
+
+function parseBackupCommand(
+  action: string | undefined,
+  remaining: readonly string[],
+): CliCommand {
+  if (action === "create") {
+    return parseBackupCreate(remaining);
+  }
+
+  if (action === "inspect") {
+    return parseBackupInspect(remaining);
+  }
+
+  if (action === "restore") {
+    return parseBackupRestore(remaining);
+  }
+
+  throw new CliUsageError(`unknown backup command ${action ?? "<missing>"}`);
+}
+
 export function parseCliArguments(argumentsList: readonly string[]): CliCommand {
   if (
     argumentsList.length === 0 ||
@@ -738,6 +922,10 @@ export function parseCliArguments(argumentsList: readonly string[]): CliCommand 
 
   if (scope === "workload") {
     return parseWorkloadCommand(action, remaining);
+  }
+
+  if (scope === "backup") {
+    return parseBackupCommand(action, remaining);
   }
 
   throw new CliUsageError(`unknown command ${scope ?? "<missing>"}`);

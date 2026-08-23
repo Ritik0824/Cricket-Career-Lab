@@ -457,3 +457,90 @@ test("rejects unsupported or repeated workload options", () => {
     /only be provided once/,
   );
 });
+
+test("parses backup create, inspect, and restore workflows", () => {
+  assert.deepEqual(
+    parseCliArguments(["backup", "create", "--to", "career.json"]),
+    {
+      kind: "backup-create",
+      to: "career.json",
+      goals: DEFAULT_GOAL_DIRECTORY,
+      journal: DEFAULT_JOURNAL_DIRECTORY,
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments([
+      "backup",
+      "create",
+      "--to",
+      "career.json",
+      "--goals",
+      "private/goals",
+      "--journal",
+      "private/journal",
+      "--exported-at",
+      "2026-10-01T08:00:00.000Z",
+    ]),
+    {
+      kind: "backup-create",
+      to: "career.json",
+      goals: "private/goals",
+      journal: "private/journal",
+      exportedAt: "2026-10-01T08:00:00.000Z",
+    },
+  );
+  assert.deepEqual(
+    parseCliArguments(["backup", "inspect", "career.json", "--json"]),
+    { kind: "backup-inspect", filePath: "career.json", json: true },
+  );
+  assert.deepEqual(
+    parseCliArguments([
+      "backup",
+      "restore",
+      "career.json",
+      "--goals",
+      "restored/goals",
+      "--journal",
+      "restored/journal",
+      "--conflicts",
+      "REPLACE",
+    ]),
+    {
+      kind: "backup-restore",
+      filePath: "career.json",
+      goals: "restored/goals",
+      journal: "restored/journal",
+      conflicts: "replace",
+    },
+  );
+});
+
+test("rejects incomplete and unsafe backup command forms", () => {
+  assert.throws(
+    () => parseCliArguments(["backup", "create"]),
+    /requires --to/,
+  );
+  assert.throws(
+    () => parseCliArguments(["backup", "inspect", "--json"]),
+    /requires <backup.json>/,
+  );
+  assert.throws(
+    () => parseCliArguments(["backup", "restore", "career.json", "--json"]),
+    /unknown backup restore option --json/,
+  );
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "backup",
+        "restore",
+        "career.json",
+        "--conflicts",
+        "merge",
+      ]),
+    /must be one of fail, skip, replace/,
+  );
+  assert.throws(
+    () => parseCliArguments(["backup", "publish", "career.json"]),
+    /unknown backup command publish/,
+  );
+});

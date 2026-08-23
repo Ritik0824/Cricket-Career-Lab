@@ -15,6 +15,9 @@ Usage:
   cricket-career-lab goal delete <goal-id> [--goals <directory>]
   cricket-career-lab workload week [--journal <directory>] [--ending <date>] [--json]
   cricket-career-lab workload month [--journal <directory>] [--month <YYYY-MM>] [--json]
+  cricket-career-lab backup create --to <backup.json> [--goals <directory>] [--journal <directory>] [--exported-at <UTC timestamp>]
+  cricket-career-lab backup inspect <backup.json> [--json]
+  cricket-career-lab backup restore <backup.json> [--goals <directory>] [--journal <directory>] [--conflicts <mode>]
   cricket-career-lab --help
 
 Commands:
@@ -30,6 +33,9 @@ Commands:
   goal delete       Delete one goal definition without deleting journal data.
   workload week     Compare an explicit seven-day window with the prior week.
   workload month    Review one calendar month against the prior month.
+  backup create     Export goals and journal records to one private file.
+  backup inspect    Validate and summarize a backup without showing notes.
+  backup restore    Restore records with explicit conflict handling.
 
 Options:
   --from        Path to an unversioned training-plan draft.
@@ -42,6 +48,8 @@ Options:
   --as-of       Goal evaluation date in YYYY-MM-DD; defaults to today.
   --ending      Weekly review end date in YYYY-MM-DD; defaults to today.
   --month       Review month in YYYY-MM; defaults to the current month.
+  --exported-at  Canonical UTC export time; defaults to the current time.
+  --conflicts   Restore mode: fail (default), skip, or replace.
   --from, --to  Inclusive completion-date bounds in YYYY-MM-DD format.
   --focus       Performed drill focus: batting, bowling, fielding, fitness, recovery.
   --intensity   Performed drill intensity: low, moderate, high.

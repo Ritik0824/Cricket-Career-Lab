@@ -6,6 +6,11 @@ import {
   DevelopmentGoalDraftError,
 } from "../application/developmentGoalDraft.js";
 import {
+  exportPrivateBackup,
+  restorePrivateBackup,
+  PrivateBackupServiceError,
+} from "../application/privateBackupService.js";
+import {
   parseSessionPlanDraft,
   SessionPlanDraftError,
 } from "../application/sessionPlanDraft.js";
@@ -42,6 +47,11 @@ import {
   DevelopmentGoalRecordError,
 } from "../storage/developmentGoalRecord.js";
 import {
+  loadPrivateBackupFile,
+  PrivateBackupFileError,
+} from "../storage/privateBackupFile.js";
+import { PrivateBackupRecordError } from "../storage/privateBackupRecord.js";
+import {
   loadSessionPlanFile,
   saveSessionPlanFile,
   SessionPlanFileError,
@@ -59,6 +69,10 @@ import {
   TrainingJournalRecordError,
 } from "../storage/trainingJournalRecord.js";
 import { parseCliArguments, CliUsageError } from "./arguments.js";
+import {
+  formatPrivateBackupSummary,
+  toPrivateBackupSummaryView,
+} from "./formatBackup.js";
 import {
   formatGoalProgress,
   formatGoalProgressList,
@@ -97,6 +111,18 @@ async function readDraft(filePath: string, label: string): Promise<string> {
 }
 
 function describeError(error: unknown): string {
+  if (error instanceof PrivateBackupServiceError) {
+    return `backup ${error.code.toLowerCase()}: ${error.message}`;
+  }
+
+  if (error instanceof PrivateBackupFileError) {
+    return `backup file ${error.code.toLowerCase()}: ${error.message}`;
+  }
+
+  if (error instanceof PrivateBackupRecordError) {
+    return `backup record ${error.code.toLowerCase()} at ${error.path}: ${error.message}`;
+  }
+
   if (error instanceof DevelopmentGoalDraftError) {
     return `goal draft ${error.code.toLowerCase()} at ${error.path}: ${error.message}`;
   }
@@ -209,6 +235,51 @@ export async function runCli(
         ? serializeSessionPlan(stored.plan, stored.savedAt)
         : formatSessionPlan(stored);
       environment.writeOutput(`${output}\n`);
+      return 0;
+    }
+
+    if (command.kind === "backup-create") {
+      const exportedAt = command.exportedAt ?? environment.now().toISOString();
+      const backup = await exportPrivateBackup({
+        goalsDirectory: command.goals,
+        journalDirectory: command.journal,
+        filePath: command.to,
+        exportedAt,
+      });
+
+      environment.writeOutput(
+        `${formatPrivateBackupSummary(backup)}\nSaved backup: ${resolve(command.to)}\n`,
+      );
+      return 0;
+    }
+
+    if (command.kind === "backup-inspect") {
+      const backup = await loadPrivateBackupFile(command.filePath);
+      const output = command.json
+        ? JSON.stringify(toPrivateBackupSummaryView(backup), null, 2)
+        : formatPrivateBackupSummary(backup);
+
+      environment.writeOutput(`${output}\n`);
+      return 0;
+    }
+
+    if (command.kind === "backup-restore") {
+      const restored = await restorePrivateBackup({
+        goalsDirectory: command.goals,
+        journalDirectory: command.journal,
+        filePath: command.filePath,
+        conflicts: command.conflicts,
+      });
+
+      environment.writeOutput(
+        [
+          `Restored backup exported ${restored.exportedAt}`,
+          `Goals: ${restored.goals.created} created, ${restored.goals.replaced} replaced, ${restored.goals.skipped} skipped`,
+          `Journal entries: ${restored.journalEntries.created} created, ${restored.journalEntries.replaced} replaced, ${restored.journalEntries.skipped} skipped`,
+          `Goal directory: ${resolve(command.goals)}`,
+          `Journal directory: ${resolve(command.journal)}`,
+        ].join("\n") + "\n",
+      );
       return 0;
     }
 

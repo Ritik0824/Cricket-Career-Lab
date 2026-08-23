@@ -89,3 +89,9 @@ comparison modules. Calendar selection remains in the product-specific review,
 while session, activity-day, focus, intensity, effort, and evidence semantics
 stay identical across windows. Monthly highlights are derived from the same
 deduplicated entries before the CLI renders text or privacy-safe JSON.
+
+Private backup composes existing versioned goal and journal records rather than
+inventing a second data model. The storage boundary validates the envelope and
+every nested record before persistence. Restore preflights both repositories,
+applies an explicit conflict policy, and records reversible mutations so a later
+write failure can restore prior records or remove newly created ones.
