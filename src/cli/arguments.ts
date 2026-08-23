@@ -71,6 +71,12 @@ export type CliCommand =
       readonly journal: string;
       readonly ending?: string;
       readonly json: boolean;
+    }
+  | {
+      readonly kind: "workload-month";
+      readonly journal: string;
+      readonly month?: string;
+      readonly json: boolean;
     };
 
 export const DEFAULT_JOURNAL_DIRECTORY = ".career/journal";
@@ -635,12 +641,61 @@ function parseWorkloadWeek(argumentsList: readonly string[]): CliCommand {
   };
 }
 
+function parseWorkloadMonth(argumentsList: readonly string[]): CliCommand {
+  let journal = DEFAULT_JOURNAL_DIRECTORY;
+  let month: string | undefined;
+  let journalProvided = false;
+  let json = false;
+
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+
+    if (argument === "--json") {
+      if (json) {
+        throw new CliUsageError("--json may only be provided once");
+      }
+
+      json = true;
+    } else if (argument === "--journal") {
+      if (journalProvided) {
+        throw new CliUsageError("--journal may only be provided once");
+      }
+
+      journal = requireOptionValue(argumentsList, index, argument);
+      journalProvided = true;
+      index += 1;
+    } else if (argument === "--month") {
+      if (month !== undefined) {
+        throw new CliUsageError("--month may only be provided once");
+      }
+
+      month = requireOptionValue(argumentsList, index, argument);
+      index += 1;
+    } else {
+      throw new CliUsageError(
+        `unknown workload month option ${argument ?? "<missing>"}`,
+      );
+    }
+  }
+
+  return {
+    kind: "workload-month",
+    journal,
+    ...(month === undefined ? {} : { month }),
+    json,
+  };
+}
+
 function parseWorkloadCommand(
   action: string | undefined,
   remaining: readonly string[],
 ): CliCommand {
   if (action === "week") {
     return parseWorkloadWeek(remaining);
+  }
+
+  if (action === "month") {
+    return parseWorkloadMonth(remaining);
   }
 
   throw new CliUsageError(

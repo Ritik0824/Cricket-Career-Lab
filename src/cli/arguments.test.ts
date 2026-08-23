@@ -399,12 +399,34 @@ test("parses weekly workload review options", () => {
       json: true,
     },
   );
+  assert.deepEqual(parseCliArguments(["workload", "month"]), {
+    kind: "workload-month",
+    journal: DEFAULT_JOURNAL_DIRECTORY,
+    json: false,
+  });
+  assert.deepEqual(
+    parseCliArguments([
+      "workload",
+      "month",
+      "--journal",
+      "private/journal",
+      "--month",
+      "2026-09",
+      "--json",
+    ]),
+    {
+      kind: "workload-month",
+      journal: "private/journal",
+      month: "2026-09",
+      json: true,
+    },
+  );
 });
 
 test("rejects unsupported or repeated workload options", () => {
   assert.throws(
-    () => parseCliArguments(["workload", "month"]),
-    /unknown workload command month/,
+    () => parseCliArguments(["workload", "quarter"]),
+    /unknown workload command quarter/,
   );
   assert.throws(
     () =>
@@ -421,5 +443,17 @@ test("rejects unsupported or repeated workload options", () => {
   assert.throws(
     () => parseCliArguments(["workload", "week", "--risk"]),
     /unknown workload week option --risk/,
+  );
+  assert.throws(
+    () =>
+      parseCliArguments([
+        "workload",
+        "month",
+        "--month",
+        "2026-09",
+        "--month",
+        "2026-10",
+      ]),
+    /only be provided once/,
   );
 });

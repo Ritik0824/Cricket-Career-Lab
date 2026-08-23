@@ -83,3 +83,9 @@ entries. It assigns deduplicated entries to two fixed UTC date windows, returns
 immutable summaries and arithmetic comparisons, and keeps medical interpretation
 outside the product boundary. The CLI owns clock selection and rendering, while
 the domain remains deterministic and independent of storage.
+
+Weekly and monthly reviews share training-period aggregation and arithmetic
+comparison modules. Calendar selection remains in the product-specific review,
+while session, activity-day, focus, intensity, effort, and evidence semantics
+stay identical across windows. Monthly highlights are derived from the same
+deduplicated entries before the CLI renders text or privacy-safe JSON.

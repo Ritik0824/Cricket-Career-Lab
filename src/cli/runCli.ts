@@ -19,6 +19,10 @@ import {
   DevelopmentGoalValidationError,
 } from "../domain/developmentGoal.js";
 import {
+  buildMonthlyPracticeReview,
+  MonthlyReviewValidationError,
+} from "../domain/monthlyReview.js";
+import {
   completeTrainingSession,
   TrainingJournalValidationError,
 } from "../domain/trainingJournal.js";
@@ -61,6 +65,7 @@ import {
   toGoalProgressView,
 } from "./formatGoal.js";
 import { formatJournalEntry, formatJournalList } from "./formatJournal.js";
+import { formatMonthlyPracticeReview } from "./formatMonthlyReview.js";
 import { formatSessionPlan } from "./formatPlan.js";
 import { formatWeeklyWorkloadReview } from "./formatWorkload.js";
 import { CLI_HELP } from "./help.js";
@@ -114,6 +119,10 @@ function describeError(error: unknown): string {
 
   if (error instanceof WeeklyWorkloadValidationError) {
     return `workload review invalid at ${error.field}: ${error.message}`;
+  }
+
+  if (error instanceof MonthlyReviewValidationError) {
+    return `monthly review invalid at ${error.field}: ${error.message}`;
   }
 
   if (error instanceof DevelopmentGoalValidationError) {
@@ -309,6 +318,18 @@ export async function runCli(
       const output = command.json
         ? JSON.stringify(review, null, 2)
         : formatWeeklyWorkloadReview(review);
+
+      environment.writeOutput(`${output}\n`);
+      return 0;
+    }
+
+    if (command.kind === "workload-month") {
+      const entries = await repository.list();
+      const month = command.month ?? environment.now().toISOString().slice(0, 7);
+      const review = buildMonthlyPracticeReview(entries, month);
+      const output = command.json
+        ? JSON.stringify(review, null, 2)
+        : formatMonthlyPracticeReview(review);
 
       environment.writeOutput(`${output}\n`);
       return 0;

@@ -183,6 +183,21 @@ test("compiled executable creates and displays a private plan", async () => {
     assert.match(workload.stdout, /Completed time: 18 min/);
     assert.match(workload.stdout, /Current entries: running-entry/);
     assert.match(workload.stdout, /does not assess readiness/);
+
+    const monthly = await runExecutable([
+      "workload",
+      "month",
+      "--journal",
+      journalPath,
+      "--month",
+      "2026-09",
+    ]);
+    assert.equal(monthly.exitCode, 0);
+    assert.equal(monthly.stderr, "");
+    assert.match(monthly.stdout, /Monthly practice review — 2026-09/);
+    assert.match(monthly.stdout, /Completed time: 18 min/);
+    assert.match(monthly.stdout, /Longest active-day streak: 1 day/);
+    assert.match(monthly.stdout, /Current evidence: running-entry/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

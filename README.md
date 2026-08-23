@@ -43,6 +43,7 @@ npm run cli -- goal create \
   --from examples/development-goal.draft.json
 npm run cli -- goal list --as-of 2026-09-30
 npm run cli -- workload week --ending 2026-09-30
+npm run cli -- workload month --month 2026-09
 ```
 
 See [docs/CLI.md](docs/CLI.md) for completion records, private journal review,
@@ -73,6 +74,10 @@ evidence for list and detail views. See
 Weekly workload review compares two explicit seven-day windows across session,
 time, effort, focus, and intensity measures without making health or injury-risk
 claims. See [docs/WEEKLY_WORKLOAD.md](docs/WEEKLY_WORKLOAD.md).
+
+Calendar-month review adds seven-day segments, consecutive active-day streaks,
+busiest-day evidence, and previous-month comparison. See
+[docs/MONTHLY_REVIEW.md](docs/MONTHLY_REVIEW.md).
 
 ## Local verification
 

@@ -761,6 +761,52 @@ test("reviews weekly workload through text and privacy-safe JSON", async () => {
       invalidCapture.errors.join(""),
       /workload review invalid at weekEnding/,
     );
+
+    const monthCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "workload",
+          "month",
+          "--journal",
+          directory,
+          "--month",
+          "2026-09",
+          "--json",
+        ],
+        monthCapture.environment,
+      ),
+      0,
+    );
+    const month = JSON.parse(monthCapture.output.join("")) as {
+      month: string;
+      current: { completedMinutes: number };
+      segments: Array<{ completedMinutes: number }>;
+    };
+    assert.equal(month.month, "2026-09");
+    assert.equal(month.current.completedMinutes, 32);
+    assert.equal(month.segments.length, 5);
+    assert.doesNotMatch(monthCapture.output.join(""), /Private/);
+
+    const invalidMonthCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        [
+          "workload",
+          "month",
+          "--journal",
+          directory,
+          "--month",
+          "2026-13",
+        ],
+        invalidMonthCapture.environment,
+      ),
+      1,
+    );
+    assert.match(
+      invalidMonthCapture.errors.join(""),
+      /monthly review invalid at month/,
+    );
   });
 });
 
@@ -776,5 +822,15 @@ test("uses the injected UTC date for workload reviews", async () => {
       0,
     );
     assert.match(capture.output.join(""), /ending 2026-08-23/);
+
+    const monthCapture = captureEnvironment();
+    assert.equal(
+      await runCli(
+        ["workload", "month", "--journal", directory],
+        monthCapture.environment,
+      ),
+      0,
+    );
+    assert.match(monthCapture.output.join(""), /review — 2026-08/);
   });
 });

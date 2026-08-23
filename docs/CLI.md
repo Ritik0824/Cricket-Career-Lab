@@ -158,6 +158,17 @@ and exact entry identifiers from validated journal records. Neither output
 contains journal notes or interprets the comparison as a health or injury-risk
 assessment. See [WEEKLY_WORKLOAD.md](WEEKLY_WORKLOAD.md).
 
+Review a complete calendar month against its predecessor:
+
+```bash
+npm run cli -- workload month --month 2026-09
+```
+
+This command also accepts `--journal` and `--json`; the current UTC month is the
+default. It adds seven-day segments, the longest active-date streak, and
+busiest-day evidence. Journal notes remain excluded. See
+[MONTHLY_REVIEW.md](MONTHLY_REVIEW.md).
+
 Usage mistakes exit with status `2`. Draft, record, and filesystem failures exit
 with status `1`; successful commands and help exit with status `0`. Error details
 are written to standard error so JSON output remains safe to pipe.
